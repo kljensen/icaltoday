@@ -1,4 +1,27 @@
+#!/usr/bin/swift
 import EventKit
+import Foundation
+import Contacts
+
+private let emailSelector = "emailAddress"
+extension EKParticipant {
+  var email: String? {
+    if responds(to: Selector(emailSelector)) {
+      return value(forKey: emailSelector) as? String
+    }
+
+    let emailComponents = description.components(separatedBy: "email = ")
+    if emailComponents.count > 1 {
+      return emailComponents[1].components(separatedBy: ";")[0]
+    }
+
+    if let email = (url as NSURL).resourceSpecifier, !email.hasPrefix("/") {
+      return email
+    }
+
+    return nil
+  }
+}
 
 var titles : [String] = []
 var startDates : [Date] = []
@@ -22,6 +45,9 @@ for calendar in calendars {
             startDates.append(event.startDate)
             endDates.append(event.endDate)
             print(event.title ?? "no title")
+            for attendee in event.attendees ?? [] {
+                print(attendee.email ?? "no email")
+            }
         }
     }
 }
