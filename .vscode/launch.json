@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug icaltoday",
+            "program": "${workspaceFolder:icaltoday}/.build/debug/icaltoday",
+            "args": [],
+            "cwd": "${workspaceFolder:icaltoday}",
+            "preLaunchTask": "swift: Build Debug icaltoday"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Release icaltoday",
+            "program": "${workspaceFolder:icaltoday}/.build/release/icaltoday",
+            "args": [],
+            "cwd": "${workspaceFolder:icaltoday}",
+            "preLaunchTask": "swift: Build Release icaltoday"
+        }
+    ]
+}
