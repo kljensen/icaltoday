@@ -11,6 +11,24 @@ eventStore.requestAccess(to: .event) { (granted, error) in
     }
 }
 
+extension EKEvent {
+  func isToday() -> Bool {
+    let today = Date()
+    let calendar = Calendar.current
+    let todayComponents = calendar.dateComponents([.year, .month, .day], from: today)
+    let eventComponents = calendar.dateComponents([.year, .month, .day], from: self.startDate)
+    return todayComponents == eventComponents
+  }
+  var dateAsString: String {
+    let dateFormatter = DateFormatter()
+    dateFormatter.dateFormat = "yyyy-MM-dd"
+    return dateFormatter.string(from: self.startDate)
+  }
+  var calendarItemExternalIdentifierAsBase64: String {
+    return Data(self.calendarItemExternalIdentifier.utf8).base64EncodedString()
+  }
+}
+
 private let emailSelector = "emailAddress"
 extension EKParticipant {
   var email: String? {
@@ -31,31 +49,42 @@ extension EKParticipant {
   }
 }
 
+
 var titles : [String] = []
 var startDates : [Date] = []
 var endDates : [Date] = []
 
+// Description of the code below:
+struct SimpleEvent: Codable {
+    var name: String
+    var attendeeEmails: [String]
+    var date: Date
+    var uid: String
+    var uidAsBase64: String
+    var isToday: Bool
+    static func fromEKEvent(event: EKEvent) -> SimpleEvent {
+        return SimpleEvent(
+          name: event.title, attendeeEmails: event.attendees?.compactMap { $0.email } ?? [], date: event.startDate, uid: event.calendarItemExternalIdentifier,  uidAsBase64: event.calendarItemExternalIdentifierAsBase64, isToday: event.isToday()
+        )
+    }
+}
+
 
 let calendars = eventStore.calendars(for: .event)
 
+let encoder = JSONEncoder()
+encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+encoder.dateEncodingStrategy = .iso8601
 for calendar in calendars {
-    print("hey")
     if calendar.title == "KLJ" {
-        print("woot")
         let start = Date(timeIntervalSinceNow: -24*3600)
         let end = Date(timeIntervalSinceNow: 24*3600)
         let predicate =  eventStore.predicateForEvents(withStart: start, end: end, calendars: [calendar])
         
         let events = eventStore.events(matching: predicate)
-        
-        for event in events {
-            titles.append(event.title)
-            startDates.append(event.startDate)
-            endDates.append(event.endDate)
-            print(event.title ?? "no title")
-            for attendee in event.attendees ?? [] {
-                print(attendee.email ?? "no email")
-            }
-        }
+         
+        let meetings = events.map { SimpleEvent.fromEKEvent(event: $0) }
+        let data = try! encoder.encode(meetings)
+        print(String(data: data, encoding: .utf8)!)
     }
 }
