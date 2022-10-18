@@ -1,8 +1,7 @@
+import ArgumentParser
+import Contacts
 import EventKit
 import Foundation
-import Contacts
-import ArgumentParser
-
 
 extension EKEvent {
   func isToday() -> Bool {
@@ -42,84 +41,85 @@ extension EKParticipant {
   }
 }
 
-
 // Description of the code below:
 struct SimpleEvent: Codable {
-    var name: String
-    var attendeeEmails: [String]
-    var date: Date
-    var uid: String
-    var uidAsBase64: String
-    var isToday: Bool
-    static func fromEKEvent(event: EKEvent) -> SimpleEvent {
-        return SimpleEvent(
-          name: event.title, attendeeEmails: event.attendees?.compactMap { $0.email } ?? [], date: event.startDate, uid: event.calendarItemExternalIdentifier,  uidAsBase64: event.calendarItemExternalIdentifierAsBase64, isToday: event.isToday()
-        )
-    }
+  var name: String
+  var attendeeEmails: [String]
+  var date: Date
+  var uid: String
+  var uidAsBase64: String
+  var isToday: Bool
+  static func fromEKEvent(event: EKEvent) -> SimpleEvent {
+    return SimpleEvent(
+      name: event.title, attendeeEmails: event.attendees?.compactMap { $0.email } ?? [],
+      date: event.startDate, uid: event.calendarItemExternalIdentifier,
+      uidAsBase64: event.calendarItemExternalIdentifierAsBase64, isToday: event.isToday()
+    )
+  }
 }
 
-
-func printEventsAsJSON(){
-    let eventStore = EKEventStore()
-    eventStore.requestAccess(to: .event) { (granted, error) in
-        if let error = error {
-        print(error)
-        return
-        }
+func printEventsAsJSON() {
+  let eventStore = EKEventStore()
+  eventStore.requestAccess(to: .event) { (granted, error) in
+    if let error = error {
+      print(error)
+      return
     }
-    let calendars = eventStore.calendars(for: .event)
+  }
+  let calendars = eventStore.calendars(for: .event)
 
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    encoder.dateEncodingStrategy = .iso8601
-    for calendar in calendars {
-        if calendar.title == "KLJ" {
-            let start = Date(timeIntervalSinceNow: -24*3600)
-            let end = Date(timeIntervalSinceNow: 24*3600)
-            let predicate =  eventStore.predicateForEvents(withStart: start, end: end, calendars: [calendar])
-            
-            let events = eventStore.events(matching: predicate)
-            
-            let meetings = events.map { SimpleEvent.fromEKEvent(event: $0) }
-            let data = try! encoder.encode(meetings)
-            print(String(data: data, encoding: .utf8)!)
-        }
+  let encoder = JSONEncoder()
+  encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+  encoder.dateEncodingStrategy = .iso8601
+  for calendar in calendars {
+    if calendar.title == "KLJ" {
+      let start = Date(timeIntervalSinceNow: -24 * 3600)
+      let end = Date(timeIntervalSinceNow: 24 * 3600)
+      let predicate = eventStore.predicateForEvents(
+        withStart: start, end: end, calendars: [calendar])
+
+      let events = eventStore.events(matching: predicate)
+
+      let meetings = events.map { SimpleEvent.fromEKEvent(event: $0) }
+      let data = try! encoder.encode(meetings)
+      print(String(data: data, encoding: .utf8)!)
     }
+  }
 }
 
 @main
 struct ICalToday: ParsableCommand {
+  static var configuration = CommandConfiguration(
+    abstract: "A utility for performing querying calendars and events on Mac OS.",
+    subcommands: [Calendars.self, Events.self]
+  )
+  struct Calendars: ParsableCommand {
     static var configuration = CommandConfiguration(
-        abstract: "A utility for performing querying calendars and events on Mac OS.",
-        subcommands: [Calendars.self, Events.self]
+      abstract: "Calendars subcommand",
+      subcommands: [List.self]
     )
-    struct Calendars: ParsableCommand {
-        static var configuration = CommandConfiguration(
-            abstract: "Calendars subcommand",
-            subcommands: [List.self]
-        )
-        struct List: ParsableCommand {
-            static var configuration = CommandConfiguration(
-                abstract: "List subcommand"
-            )
-            mutating func run() throws {
-                print("woot")
-            }
-        }
+    struct List: ParsableCommand {
+      static var configuration = CommandConfiguration(
+        abstract: "List subcommand"
+      )
+      mutating func run() throws {
+        print("woot")
+      }
     }
-    struct Events: ParsableCommand {
-        static var configuration = CommandConfiguration(
-            abstract: "Events subcommand",
-            subcommands: [List.self]
-        )
-        struct List: ParsableCommand {
-            static var configuration = CommandConfiguration(
-                abstract: "List subcommand"
-            )
-            mutating func run() throws {
-                printEventsAsJSON()
-            }
-        }
+  }
+  struct Events: ParsableCommand {
+    static var configuration = CommandConfiguration(
+      abstract: "Events subcommand",
+      subcommands: [List.self]
+    )
+    struct List: ParsableCommand {
+      static var configuration = CommandConfiguration(
+        abstract: "List subcommand"
+      )
+      mutating func run() throws {
+        printEventsAsJSON()
+      }
     }
+  }
 
 }
