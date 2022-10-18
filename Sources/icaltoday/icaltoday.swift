@@ -1,6 +1,7 @@
 import EventKit
 import Foundation
 import Contacts
+import ArgumentParser
 
 
 extension EKEvent {
@@ -87,10 +88,38 @@ func printEventsAsJSON(){
 }
 
 @main
-public struct icaltoday {
-    public private(set) var text = "Hello, World!"
-
-    public static func main() {
-        printEventsAsJSON()
+struct ICalToday: ParsableCommand {
+    static var configuration = CommandConfiguration(
+        abstract: "A utility for performing querying calendars and events on Mac OS.",
+        subcommands: [Calendars.self, Events.self]
+    )
+    struct Calendars: ParsableCommand {
+        static var configuration = CommandConfiguration(
+            abstract: "Calendars subcommand",
+            subcommands: [List.self]
+        )
+        struct List: ParsableCommand {
+            static var configuration = CommandConfiguration(
+                abstract: "List subcommand"
+            )
+            mutating func run() throws {
+                print("woot")
+            }
+        }
     }
+    struct Events: ParsableCommand {
+        static var configuration = CommandConfiguration(
+            abstract: "Events subcommand",
+            subcommands: [List.self]
+        )
+        struct List: ParsableCommand {
+            static var configuration = CommandConfiguration(
+                abstract: "List subcommand"
+            )
+            mutating func run() throws {
+                printEventsAsJSON()
+            }
+        }
+    }
+
 }
