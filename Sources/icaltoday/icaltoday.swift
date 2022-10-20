@@ -58,7 +58,19 @@ struct SimpleEvent: Codable {
   }
 }
 
-func printEventsAsJSON() {
+func getMatchingCalendars(eventStore: EKEventStore, calendarNames: [String]?) -> [EKCalendar] {
+  let calendars = eventStore.calendars(for: .event)
+  if let calendarNames = calendarNames {
+    if calendarNames.count == 0 {
+      return calendars
+    }
+    return calendars.filter { calendarNames.contains($0.title) }
+  } else {
+    return calendars
+  }
+}
+
+func printEventsAsJSON(withEventStore eventStore: EKEventStore, withCalendars calendars: [EKCalendar], withStart startDate: Date, withEnd endDate: Date) {
   let eventStore = EKEventStore()
   eventStore.requestAccess(to: .event) { (granted, error) in
     if let error = error {
@@ -66,26 +78,60 @@ func printEventsAsJSON() {
       return
     }
   }
-  let calendars = eventStore.calendars(for: .event)
+  if calendars == [] {
+    print("{}")
+    return
+  }
+  let predicate = eventStore.predicateForEvents(
+    withStart: startDate, end: endDate, calendars: calendars
+  )
+  let events = eventStore.events(matching: predicate)
+  let meetings = events.map { SimpleEvent.fromEKEvent(event: $0) }
 
+  // Print the events as JSON
   let encoder = JSONEncoder()
   encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
   encoder.dateEncodingStrategy = .iso8601
-  for calendar in calendars {
-    if calendar.title == "KLJ" {
-      let start = Date(timeIntervalSinceNow: -24 * 3600)
-      let end = Date(timeIntervalSinceNow: 24 * 3600)
-      let predicate = eventStore.predicateForEvents(
-        withStart: start, end: end, calendars: [calendar])
-
-      let events = eventStore.events(matching: predicate)
-
-      let meetings = events.map { SimpleEvent.fromEKEvent(event: $0) }
-      let data = try! encoder.encode(meetings)
-      print(String(data: data, encoding: .utf8)!)
-    }
-  }
+  let data = try! encoder.encode(meetings)
+  print(String(data: data, encoding: .utf8)!)
 }
+
+// A function that takes a string and returns
+// an optional Date. It tries to parse the string
+// into a date using a few common formats. The
+// time zone is set to local time.
+func parseDate(_ dateString: String) -> Date? {
+  let dateFormatter = DateFormatter()
+  dateFormatter.dateFormat = "yyyy-MM-dd"
+  dateFormatter.timeZone = TimeZone.current
+  if let date = dateFormatter.date(from: dateString) {
+    return date
+  }
+  dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
+  if let date = dateFormatter.date(from: dateString) {
+    return date
+  }
+  dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+  if let date = dateFormatter.date(from: dateString) {
+    return date
+  }
+  return nil
+}
+
+
+// Extend Date to make so that we can
+// make dates from strings.
+extension Date: ExpressibleByArgument {
+  public init?(argument: String) {
+    if let date = parseDate(argument) {
+      self = date
+    } else {
+      return nil
+    }
+  }  
+}
+
+
 
 @main
 struct ICalToday: ParsableCommand {
@@ -113,13 +159,29 @@ struct ICalToday: ParsableCommand {
       subcommands: [List.self]
     )
     struct List: ParsableCommand {
+      @Argument
+      var startDate: Date
+      @Argument
+      var endDate: Date
+      @Option(name: [.short, .customLong("calendar")])
+      var calendarNames: [String] = []
+
       static var configuration = CommandConfiguration(
         abstract: "List subcommand"
       )
       mutating func run() throws {
-        printEventsAsJSON()
+        let eventStore = EKEventStore()
+        eventStore .requestAccess(to: .event) { (granted, error) in
+          if let error = error {
+            print(error)
+            return
+          }
+        }
+        let calendars = getMatchingCalendars(eventStore: eventStore, calendarNames: calendarNames)
+        printEventsAsJSON(withEventStore: eventStore, withCalendars: calendars, withStart: startDate, withEnd: endDate)
       }
     }
   }
 
 }
+
