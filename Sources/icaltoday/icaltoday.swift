@@ -131,10 +131,19 @@ extension Date: ExpressibleByArgument {
   }  
 }
 
+func listAllCalendarsAsJSON(withEventStore eventStore: EKEventStore) {
+  let calendars = eventStore.calendars(for: .event)
+  let encoder = JSONEncoder()
+  encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+  encoder.dateEncodingStrategy = .iso8601
+  let calendarNames = calendars.map { $0.title }
+  let data = try! encoder.encode(calendarNames)
+  print(String(data: data, encoding: .utf8)!)
+}
 
 
 @main
-struct ICalToday: ParsableCommand {
+struct icaltoday: ParsableCommand {
   static var configuration = CommandConfiguration(
     abstract: "A utility for performing querying calendars and events on Mac OS.",
     subcommands: [Calendars.self, Events.self]
@@ -149,7 +158,14 @@ struct ICalToday: ParsableCommand {
         abstract: "List subcommand"
       )
       mutating func run() throws {
-        print("woot")
+        let eventStore = EKEventStore()
+        eventStore .requestAccess(to: .event) { (granted, error) in
+          if let error = error {
+            print(error)
+            return
+          }
+        }
+        listAllCalendarsAsJSON(withEventStore: eventStore)
       }
     }
   }
