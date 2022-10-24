@@ -71,13 +71,6 @@ func getMatchingCalendars(eventStore: EKEventStore, calendarNames: [String]?) ->
 }
 
 func printEventsAsJSON(withEventStore eventStore: EKEventStore, withCalendars calendars: [EKCalendar], withStart startDate: Date, withEnd endDate: Date) {
-  let eventStore = EKEventStore()
-  eventStore.requestAccess(to: .event) { (granted, error) in
-    if let error = error {
-      print(error)
-      return
-    }
-  }
   if calendars == [] {
     print("{}")
     return
