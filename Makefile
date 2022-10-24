@@ -6,6 +6,6 @@ release: Sources/icaltoday/icaltoday.swift
 
 debug:
 	xcrun swift build 
-	echo "Built for release. See ./.build/debug/icaltoday"
+	echo "Built for debugging. See ./.build/debug/icaltoday"
 
 
