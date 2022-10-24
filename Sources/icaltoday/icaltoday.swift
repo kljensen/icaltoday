@@ -139,7 +139,7 @@ func listAllCalendarsAsJSON(withEventStore eventStore: EKEventStore) {
 struct icaltoday: ParsableCommand {
   static var configuration = CommandConfiguration(
     abstract: "A utility for performing querying calendars and events on Mac OS.",
-    subcommands: [Calendars.self, Events.self]
+    subcommands: [Calendars.self, Events.self, Authorize.self]
   )
   struct Calendars: ParsableCommand {
     static var configuration = CommandConfiguration(
@@ -157,8 +157,12 @@ struct icaltoday: ParsableCommand {
             print(error)
             return
           }
+          if granted {
+            listAllCalendarsAsJSON(withEventStore: eventStore)
+          } else {
+            print("Access to calendar not granted")
+          }
         }
-        listAllCalendarsAsJSON(withEventStore: eventStore)
       }
     }
   }
@@ -178,16 +182,40 @@ struct icaltoday: ParsableCommand {
       static var configuration = CommandConfiguration(
         abstract: "List subcommand"
       )
-      mutating func run() throws {
-        let eventStore = EKEventStore()
-        eventStore .requestAccess(to: .event) { (granted, error) in
+      func run() throws {
+        switch EKEventStore.authorizationStatus(for: .reminder) {
+        case .authorized:
+          let eventStore = EKEventStore()
+          let calendars = getMatchingCalendars(eventStore: eventStore, calendarNames: calendarNames)
+          printEventsAsJSON(withEventStore: eventStore, withCalendars: calendars, withStart: startDate, withEnd: endDate)
+        default:
+          print("Access to calendar not granted. Try running `icaltoday authorize`")
+        }
+      }
+    }
+  }
+  struct Authorize: ParsableCommand {
+    static var configuration = CommandConfiguration(
+      abstract: "Authorize subcommand"
+    )
+    func run() throws {
+      let eventStore = EKEventStore()
+      func requestEventStoreAccess(completion: @escaping (Bool) -> Void) {
+        eventStore.requestAccess(to: .event) { (granted, error) in
           if let error = error {
-            print(error)
+            print("EKEventStore request access completed with error: \(error.localizedDescription)")
+            completion(granted)
             return
           }
+          completion(granted)
         }
-        let calendars = getMatchingCalendars(eventStore: eventStore, calendarNames: calendarNames)
-        printEventsAsJSON(withEventStore: eventStore, withCalendars: calendars, withStart: startDate, withEnd: endDate)
+      }
+      requestEventStoreAccess { (granted) in
+        if granted {
+          print("Access to calendar granted")
+        } else {
+          print("Access to calendar not granted")
+        }
       }
     }
   }
