@@ -18,8 +18,5 @@ let package = Package(
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ]),
-        .testTarget(
-            name: "icaltodayTests",
-            dependencies: ["icaltoday"]),
     ]
 )
