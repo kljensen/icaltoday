@@ -7,7 +7,13 @@ which appears to 1) not be maintained and 2) not provide structured,
 machine-readable output.
 
 There are just
-two commands. Maybe I'll add more later.
+three commands. Maybe I'll add more later.
+
+Authorize the app to access your calendars:
+
+```
+> icaltoday authorize
+```
 
 Get a list of your calendars:
 
