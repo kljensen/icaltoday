@@ -8,4 +8,7 @@ debug:
 	xcrun swift build 
 	echo "Built for debugging. See ./.build/debug/icaltoday"
 
+test:
+	xcrun swift test
+
 

@@ -111,7 +111,6 @@ func parseDate(_ dateString: String) -> Date? {
   return nil
 }
 
-
 // Extend Date to make so that we can
 // make dates from strings.
 extension Date: ExpressibleByArgument {
@@ -134,6 +133,23 @@ func listAllCalendarsAsJSON(withEventStore eventStore: EKEventStore) {
   print(String(data: data, encoding: .utf8)!)
 }
 
+// Parse time ranges from the command line. These should be of the
+// format "8:32-9:45". It returns a tuple of two dates.
+func parseTimeRange(_ timeRange: String) -> (Date, Date)? {
+  let components = timeRange.components(separatedBy: "-")
+  if components.count != 2 {
+    return nil
+  }
+  // Parse assuming GMT
+  let dateFormatter = DateFormatter()
+  dateFormatter.dateFormat = "HH:mm"
+  dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+  if let startDate = dateFormatter.date(from: components[0]),
+     let endDate = dateFormatter.date(from: components[1]) {
+    return (startDate, endDate)
+  }
+  return nil
+}
 
 @main
 struct icaltoday: ParsableCommand {
@@ -246,7 +262,57 @@ struct icaltoday: ParsableCommand {
       semaphore.wait() // Wait for the semaphore to be signaled before exiting
     }
   }
+  // A subcommand to list availability between existing events
+  struct Availability: ParsableCommand {
+    static var configuration = CommandConfiguration(
+      abstract: "Availability subcommand",
+      subcommands: [List.self]
+    )
+    struct List: ParsableCommand {
+      @Argument
+      var startDate: Date
+      @Argument
+      var endDate: Date
+      // Option for calendars to *exclude* from the availability check
+      @Option(name: [.short, .customLong("exclude")])
+      var excludeCalendarNames: [String] = []
+      // Option for calendars to *include* in the availability check
+      @Option(name: [.short, .customLong("include")])
+      var includeCalendarNames: [String] = []
 
+      static var configuration = CommandConfiguration(
+        abstract: "List subcommand"
+      )
+      mutating func run() throws {
+        let status = EKEventStore.authorizationStatus(for: .event)
 
+        switch status {
+        case .authorized, .fullAccess:
+          // For now, just log the arguments
+          print("Start date: \(startDate)")
+          print("End date: \(endDate)")
+          print("Exclude calendars: \(excludeCalendarNames)")
+          print("Include calendars: \(includeCalendarNames)")
+
+          
+
+        case .denied, .restricted:
+          print("Access to the calendar is denied or restricted. Please grant access through System Preferences and try again.")
+          Foundation.exit(1)
+
+        case .writeOnly:
+          print("Access to the calendar is write-only. Please grant access through System Preferences and try again.")
+          Foundation.exit(1)
+
+        case .notDetermined:
+          print("Access to the calendar has not been determined. You need to request access first.")
+          Foundation.exit(1)
+        
+        @unknown default:
+          fatalError("Unknown authorization status for EKEventStore")
+        }
+      }
+    }
+  }
 }
 
