@@ -139,7 +139,7 @@ func listAllCalendarsAsJSON(withEventStore eventStore: EKEventStore) {
 struct icaltoday: ParsableCommand {
   static var configuration = CommandConfiguration(
     abstract: "A utility for performing querying calendars and events on Mac OS.",
-    subcommands: [Calendars.self, Events.self]
+    subcommands: [Calendars.self, Events.self, Authorize.self]
   )
   struct Calendars: ParsableCommand {
     static var configuration = CommandConfiguration(
@@ -150,15 +150,30 @@ struct icaltoday: ParsableCommand {
       static var configuration = CommandConfiguration(
         abstract: "List subcommand"
       )
+
       mutating func run() throws {
-        let eventStore = EKEventStore()
-        eventStore .requestAccess(to: .event) { (granted, error) in
-          if let error = error {
-            print(error)
-            return
-          }
+        let status = EKEventStore.authorizationStatus(for: .event)
+
+        switch status {
+        case .authorized, .fullAccess:
+          let eventStore = EKEventStore()
+          listAllCalendarsAsJSON(withEventStore: eventStore)
+
+        case .denied, .restricted:
+          print("Access to the calendar is denied or restricted. Please grant access through System Preferences and try again.")
+          Foundation.exit(1)
+
+        case .writeOnly:
+          print("Access to the calendar is write-only. Please grant access through System Preferences and try again.")
+          Foundation.exit(1)
+
+        case .notDetermined:
+          print("Access to the calendar has not been determined. You need to request access first.")
+          Foundation.exit(1)
+
+        @unknown default:
+          fatalError("Unknown authorization status for EKEventStore")
         }
-        listAllCalendarsAsJSON(withEventStore: eventStore)
       }
     }
   }
@@ -179,18 +194,59 @@ struct icaltoday: ParsableCommand {
         abstract: "List subcommand"
       )
       mutating func run() throws {
-        let eventStore = EKEventStore()
-        eventStore .requestAccess(to: .event) { (granted, error) in
-          if let error = error {
-            print(error)
-            return
-          }
+        let status = EKEventStore.authorizationStatus(for: .event)
+
+      switch status {
+        case .authorized, .fullAccess:
+          let eventStore = EKEventStore()
+          let calendars = getMatchingCalendars(eventStore: eventStore, calendarNames: calendarNames)
+          printEventsAsJSON(withEventStore: eventStore, withCalendars: calendars, withStart: startDate, withEnd: endDate)
+
+        case .denied, .restricted:
+          print("Access to the calendar is denied or restricted. Please grant access through System Preferences and try again.")
+          Foundation.exit(1)
+        
+        case .writeOnly:
+          print("Access to the calendar is write-only. Please grant access through System Preferences and try again.")
+          Foundation.exit(1)
+        
+        case .notDetermined:
+          print("Access to the calendar has not been determined. You need to request access first.")
+          Foundation.exit(1)
+
+        @unknown default:
+          fatalError("Unknown authorization status for EKEventStore")
         }
-        let calendars = getMatchingCalendars(eventStore: eventStore, calendarNames: calendarNames)
-        printEventsAsJSON(withEventStore: eventStore, withCalendars: calendars, withStart: startDate, withEnd: endDate)
       }
     }
   }
+  struct Authorize: ParsableCommand {
+    static var configuration = CommandConfiguration(
+      abstract: "Requests access to the calendar."
+    )
+
+    func run() throws {
+      let eventStore = EKEventStore()
+      let semaphore = DispatchSemaphore(value: 0) // Create a semaphore
+
+      print("Requesting access to the calendar...")
+
+      eventStore.requestAccess(to: .event) { granted, error in
+        defer { semaphore.signal() } // Signal the semaphore in the defer block to ensure it always gets called
+
+        if let error = error {
+          print("Error requesting access: \(error.localizedDescription)")
+        } else if granted {
+          print("Access to the calendar has been granted.")
+        } else {
+          print("Access to the calendar has been denied.")
+        }
+      }
+
+      semaphore.wait() // Wait for the semaphore to be signaled before exiting
+    }
+  }
+
 
 }
 
