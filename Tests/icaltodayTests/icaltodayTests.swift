@@ -1,11 +1,24 @@
 import XCTest
+import EventKit
 @testable import icaltoday
+
+// A little helper for making EKEvents tersely
+func makeEvent(start: Date, end: Date) -> EKEvent {
+    let event = EKEvent(eventStore: EKEventStore())
+    event.startDate = start
+    event.endDate = end
+    return event
+}
+
+// Same as above but takes seconds since 1970
+func makeEvent(start: TimeInterval, end: TimeInterval) -> EKEvent {
+    return makeEvent(start: Date(timeIntervalSince1970: start), end: Date(timeIntervalSince1970: end))
+}
 
 final class icaltodayTests: XCTestCase {
     func testparseTimeRange() {
         // Tests the parseTimeRange function in the icaltoday module
         let timeRange = parseTimeRange("10:00-11:00")
-        print(timeRange!.1)
         // Assert that we didn't get back nil
         XCTAssertNotNil(timeRange)
         // Test at the first element of the tuple has a time of 10:00.
@@ -17,5 +30,57 @@ final class icaltodayTests: XCTestCase {
         let invalidTimeRange = parseTimeRange("10:00-")
         XCTAssertNil(invalidTimeRange)
 
+    }
+    func testSortEventsByStartDate(){
+        let numEvents = 10
+        var events = [EKEvent]()
+        for _ in 0..<numEvents {
+            let event = EKEvent(eventStore: EKEventStore())
+            // Choose a random start date
+            event.startDate = Date(timeIntervalSince1970: TimeInterval.random(in: 0...100000000))
+            events.append(event)
+        }
+        // Sort the events
+        let sortedEvents = sortEventsByStartDate(events)
+        // Loop over and check that the events are sorted
+        for i in 0..<sortedEvents.count-1 {
+            XCTAssertLessThan(sortedEvents[i].startDate, sortedEvents[i+1].startDate)
+        }
+    }
+
+    func testMergeOverlappingEvents1(){
+        let events = [
+            makeEvent(start: 0, end: 10),
+            makeEvent(start: 5, end: 15),
+            makeEvent(start: 20, end: 30),
+            makeEvent(start: 25, end: 35),
+            makeEvent(start: 40, end: 50),
+            makeEvent(start: 45, end: 55),
+        ]
+        let mergedEvents  = mergeOverlappingEvents(events)
+        XCTAssertEqual(mergedEvents.count, 3)
+    }
+    func testMergeOverlappingEvents2(){
+        let events = [
+            makeEvent(start: 0, end: 10),
+            makeEvent(start: 5, end: 15),
+            makeEvent(start: 20, end: 30),
+            makeEvent(start: 25, end: 35),
+            makeEvent(start: 40, end: 50),
+            makeEvent(start: 0, end: 55),
+        ]
+        let mergedEvents  = mergeOverlappingEvents(events)
+        XCTAssertEqual(mergedEvents.count, 1)
+    }
+    func testMergeOverlappingEvents3(){
+        let events = [
+            makeEvent(start: 0, end: 10),
+            makeEvent(start: 5, end: 15),
+            makeEvent(start: 20, end: 30),
+            makeEvent(start: 25, end: 35),
+            makeEvent(start: 35, end: 50),
+        ]
+        let mergedEvents  = mergeOverlappingEvents(events)
+        XCTAssertEqual(mergedEvents.count, 2)
     }
 }

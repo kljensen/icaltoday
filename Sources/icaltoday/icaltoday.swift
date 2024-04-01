@@ -58,6 +58,37 @@ struct SimpleEvent: Codable {
   }
 }
 
+func sortEventsByStartDate(_ events: [EKEvent]) -> [EKEvent] {
+  return events.sorted { $0.startDate < $1.startDate }
+}
+
+// Merge overlapping events. We take a list of EKEvents and return a list of EKEvents.
+// We sort them first by start date, then we iterate over the sorted list and merge
+// any events that are overlapping. 
+func mergeOverlappingEvents(_ events: [EKEvent]) -> [EKEvent] {
+  // Handle the case where there are no events
+  if events.count == 0 {
+    return []
+  }
+  // Sort the events by start date
+  let sortedEvents = sortEventsByStartDate(events)
+  var mergedEvents = [EKEvent]()
+  var currentEvent = sortedEvents[0]
+  for event in sortedEvents[1...] {
+    if currentEvent.endDate >= event.startDate {
+      // The events overlap, so we need to merge them
+      currentEvent.endDate = max(currentEvent.endDate, event.endDate)
+    } else {
+      // The events don't overlap, so we add the current event to the merged list
+      mergedEvents.append(currentEvent)
+      currentEvent = event
+    }
+  }
+  // Append the last event
+  mergedEvents.append(currentEvent)
+  return mergedEvents
+}
+
 func getMatchingCalendars(eventStore: EKEventStore, calendarNames: [String]?) -> [EKCalendar] {
   let calendars = eventStore.calendars(for: .event)
   if let calendarNames = calendarNames {
@@ -89,10 +120,9 @@ func printEventsAsJSON(withEventStore eventStore: EKEventStore, withCalendars ca
   print(String(data: data, encoding: .utf8)!)
 }
 
-// A function that takes a string and returns
-// an optional Date. It tries to parse the string
-// into a date using a few common formats. The
-// time zone is set to local time.
+/// Parses a string representation of a date and returns a `Date` object.
+/// - Parameter dateString: The string representation of the date.
+/// - Returns: A `Date` object if the string can be parsed successfully, otherwise `nil`.
 func parseDate(_ dateString: String) -> Date? {
   let dateFormatter = DateFormatter()
   dateFormatter.dateFormat = "yyyy-MM-dd"
@@ -111,16 +141,17 @@ func parseDate(_ dateString: String) -> Date? {
   return nil
 }
 
-// Extend Date to make so that we can
-// make dates from strings.
 extension Date: ExpressibleByArgument {
+  /// Initializes a new instance of `icaltoday` by parsing the given argument as a date.
+  /// - Parameter argument: The string representation of the date to be parsed.
+  /// - Returns: An initialized `icaltoday` instance if the argument can be successfully parsed as a date; otherwise, `nil`.
   public init?(argument: String) {
     if let date = parseDate(argument) {
       self = date
     } else {
       return nil
     }
-  }  
+  }
 }
 
 func listAllCalendarsAsJSON(withEventStore eventStore: EKEventStore) {
