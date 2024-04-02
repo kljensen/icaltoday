@@ -185,10 +185,15 @@ func parseTimeRange(_ timeRange: String) -> (Date, Date)? {
 // Function that returns true if authorizationStatus provides access
 // to the calendar. Handles old version of macOS.
 func hasAccessToCalendar(_ authorizationStatus: EKAuthorizationStatus) -> Bool {
-  if #available(macOS 14, *) {
-    return authorizationStatus == .authorized || authorizationStatus == .fullAccess
-  } 
-  return authorizationStatus == .authorized
+    if #available(macOS 14, *) {
+        #if os(macOS)
+        return authorizationStatus == .authorized || authorizationStatus == .fullAccess
+        #else
+        return authorizationStatus == .authorized
+        #endif
+    } else {
+        return authorizationStatus == .authorized
+    }
 }
 
 @main
