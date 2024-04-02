@@ -182,6 +182,16 @@ func parseTimeRange(_ timeRange: String) -> (Date, Date)? {
   return nil
 }
 
+// Function that returns true if authorizationStatus provides access
+// to the calendar. Handles old version of macOS.
+func hasAccessToCalendar(_ authorizationStatus: EKAuthorizationStatus) -> Bool {
+  if #available(macOS 14.0, *) {
+    return authorizationStatus == .authorized || authorizationStatus == .fullAccess
+  } else {
+    return authorizationStatus == .authorized
+  }
+}
+
 @main
 struct icaltoday: ParsableCommand {
   static var configuration = CommandConfiguration(
@@ -200,26 +210,12 @@ struct icaltoday: ParsableCommand {
 
       mutating func run() throws {
         let status = EKEventStore.authorizationStatus(for: .event)
-
-        switch status {
-        case .authorized, .fullAccess:
-          let eventStore = EKEventStore()
-          listAllCalendarsAsJSON(withEventStore: eventStore)
-
-        case .denied, .restricted:
+        if !hasAccessToCalendar(status) {
           print("Access to the calendar is denied or restricted. Please grant access through System Preferences and try again.")
           Foundation.exit(1)
-
-        case .writeOnly:
-          print("Access to the calendar is write-only. Please grant access through System Preferences and try again.")
-          Foundation.exit(1)
-
-        case .notDetermined:
-          print("Access to the calendar has not been determined. You need to request access first.")
-          Foundation.exit(1)
-
-        @unknown default:
-          fatalError("Unknown authorization status for EKEventStore")
+        } else {
+          let eventStore = EKEventStore()
+          listAllCalendarsAsJSON(withEventStore: eventStore)
         }
       }
     }
@@ -242,27 +238,13 @@ struct icaltoday: ParsableCommand {
       )
       mutating func run() throws {
         let status = EKEventStore.authorizationStatus(for: .event)
-
-      switch status {
-        case .authorized, .fullAccess:
+        if !hasAccessToCalendar(status) {
+          print("Access to the calendar is denied or restricted. Please grant access through System Preferences and try again.")
+          Foundation.exit(1)
+        } else {
           let eventStore = EKEventStore()
           let calendars = getMatchingCalendars(eventStore: eventStore, calendarNames: calendarNames)
           printEventsAsJSON(withEventStore: eventStore, withCalendars: calendars, withStart: startDate, withEnd: endDate)
-
-        case .denied, .restricted:
-          print("Access to the calendar is denied or restricted. Please grant access through System Preferences and try again.")
-          Foundation.exit(1)
-        
-        case .writeOnly:
-          print("Access to the calendar is write-only. Please grant access through System Preferences and try again.")
-          Foundation.exit(1)
-        
-        case .notDetermined:
-          print("Access to the calendar has not been determined. You need to request access first.")
-          Foundation.exit(1)
-
-        @unknown default:
-          fatalError("Unknown authorization status for EKEventStore")
         }
       }
     }
