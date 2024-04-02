@@ -213,10 +213,9 @@ struct icaltoday: ParsableCommand {
         if !hasAccessToCalendar(status) {
           print("Access to the calendar is denied or restricted. Please grant access through System Preferences and try again.")
           Foundation.exit(1)
-        } else {
-          let eventStore = EKEventStore()
-          listAllCalendarsAsJSON(withEventStore: eventStore)
         }
+        let eventStore = EKEventStore()
+        listAllCalendarsAsJSON(withEventStore: eventStore)
       }
     }
   }
@@ -241,11 +240,10 @@ struct icaltoday: ParsableCommand {
         if !hasAccessToCalendar(status) {
           print("Access to the calendar is denied or restricted. Please grant access through System Preferences and try again.")
           Foundation.exit(1)
-        } else {
-          let eventStore = EKEventStore()
-          let calendars = getMatchingCalendars(eventStore: eventStore, calendarNames: calendarNames)
-          printEventsAsJSON(withEventStore: eventStore, withCalendars: calendars, withStart: startDate, withEnd: endDate)
         }
+        let eventStore = EKEventStore()
+        let calendars = getMatchingCalendars(eventStore: eventStore, calendarNames: calendarNames)
+        printEventsAsJSON(withEventStore: eventStore, withCalendars: calendars, withStart: startDate, withEnd: endDate)
       }
     }
   }
@@ -299,31 +297,15 @@ struct icaltoday: ParsableCommand {
       mutating func run() throws {
         let status = EKEventStore.authorizationStatus(for: .event)
 
-        switch status {
-        case .authorized, .fullAccess:
-          // For now, just log the arguments
-          print("Start date: \(startDate)")
-          print("End date: \(endDate)")
-          print("Exclude calendars: \(excludeCalendarNames)")
-          print("Include calendars: \(includeCalendarNames)")
-
-          
-
-        case .denied, .restricted:
+        if !hasAccessToCalendar(status) {
           print("Access to the calendar is denied or restricted. Please grant access through System Preferences and try again.")
           Foundation.exit(1)
-
-        case .writeOnly:
-          print("Access to the calendar is write-only. Please grant access through System Preferences and try again.")
-          Foundation.exit(1)
-
-        case .notDetermined:
-          print("Access to the calendar has not been determined. You need to request access first.")
-          Foundation.exit(1)
-        
-        @unknown default:
-          fatalError("Unknown authorization status for EKEventStore")
-        }
+        } 
+        // For now, just log the arguments
+        print("Start date: \(startDate)")
+        print("End date: \(endDate)")
+        print("Exclude calendars: \(excludeCalendarNames)")
+        print("Include calendars: \(includeCalendarNames)")
       }
     }
   }
