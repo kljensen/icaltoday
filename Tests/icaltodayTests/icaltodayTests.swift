@@ -4,7 +4,7 @@ import EventKit
 
 // A little helper for making EKEvents tersely
 func makeEvent(start: Date, end: Date) -> EKEvent {
-    let event = EKEvent(eventStore: EKEventStore())
+    let event = EKEvent()
     event.startDate = start
     event.endDate = end
     return event

@@ -224,7 +224,11 @@ func hasAccessToCalendar(_ authorizationStatus: EKAuthorizationStatus) -> Bool {
 #if OLD_EVKIT
   return authorizationStatus == .authorized
 #else
-  return authorizationStatus == .authorized  || authorizationStatus == .fullAccess
+  if #available(macOS 14, *) {
+      return authorizationStatus == .authorized  || authorizationStatus == .fullAccess
+  } else {
+      return authorizationStatus == .authorized
+  }
 #endif
 }
 
