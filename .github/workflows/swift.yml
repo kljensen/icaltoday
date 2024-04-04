@@ -21,4 +21,4 @@ jobs:
         xcode-version: latest-stable
     - uses: swift-actions/setup-swift@v2
     - name: Build
-      run: swift test
+      run: make test
