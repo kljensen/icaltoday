@@ -84,3 +84,35 @@ final class icaltodayTests: XCTestCase {
         XCTAssertEqual(mergedEvents.count, 2)
     }
 }
+func testCompareEvents() {
+    let event1 = makeEvent(start: 0, end: 10)
+    let event2 = makeEvent(start: 5, end: 15)
+    let event3 = makeEvent(start: 20, end: 30)
+    let event4 = makeEvent(start: 25, end: 35)
+    let event5 = makeEvent(start: 40, end: 50)
+    
+    XCTAssertEqual(event1.compare(to: event2), .overlapsAtStart)
+    XCTAssertEqual(event1.compare(to: event3), .before)
+    XCTAssertEqual(event1.compare(to: event4), .overlapsAtStart)
+    XCTAssertEqual(event1.compare(to: event5), .before)
+    
+    XCTAssertEqual(event2.compare(to: event1), .overlapsAtStart)
+    XCTAssertEqual(event2.compare(to: event3), .overlapsAtEnd)
+    XCTAssertEqual(event2.compare(to: event4), .overlapsAtEnd)
+    XCTAssertEqual(event2.compare(to: event5), .before)
+    
+    XCTAssertEqual(event3.compare(to: event1), .after)
+    XCTAssertEqual(event3.compare(to: event2), .overlapsAtEnd)
+    XCTAssertEqual(event3.compare(to: event4), .overlapsAtStart)
+    XCTAssertEqual(event3.compare(to: event5), .before)
+    
+    XCTAssertEqual(event4.compare(to: event1), .overlapsAtStart)
+    XCTAssertEqual(event4.compare(to: event2), .overlapsAtEnd)
+    XCTAssertEqual(event4.compare(to: event3), .overlapsAtStart)
+    XCTAssertEqual(event4.compare(to: event5), .before)
+    
+    XCTAssertEqual(event5.compare(to: event1), .after)
+    XCTAssertEqual(event5.compare(to: event2), .after)
+    XCTAssertEqual(event5.compare(to: event3), .after)
+    XCTAssertEqual(event5.compare(to: event4), .after)
+}
