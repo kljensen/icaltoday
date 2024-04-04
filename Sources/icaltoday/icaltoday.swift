@@ -222,11 +222,7 @@ func parseTimeRange(_ timeRange: String) -> (Date, Date)? {
 // to the calendar. Handles old version of macOS.
 func hasAccessToCalendar(_ authorizationStatus: EKAuthorizationStatus) -> Bool {
     if #available(macOS 14, *) {
-        #if os(macOS)
-        return authorizationStatus == .authorized || authorizationStatus == .fullAccess
-        #else
-        return authorizationStatus == .authorized
-        #endif
+        return authorizationStatus == .authorized  || authorizationStatus == .fullAccess
     } else {
         return authorizationStatus == .authorized
     }
