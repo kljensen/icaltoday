@@ -11,13 +11,13 @@ check_evkit:
         echo "EKAuthorizationStatus.fullAccess is not available"; \
         SWIFT_FLAGS="-Xswiftc -DOLD_EVKIT"; \
     fi
+    echo "SWIFT_FLAGS: $(SWIFT_FLAGS)"
 
 # Export SWIFT_FLAGS so it's available in all targets
 export SWIFT_FLAGS
 
 # Build the debug version
 debug: check_evkit
-    echo "SWIFT_FLAGS: $(SWIFT_FLAGS)"
 	xcrun swift build $SWIFT_FLAGS
 	@echo "Built for debugging. See ./.build/debug/icaltoday"
 
@@ -28,7 +28,6 @@ release: check_evkit Sources/icaltoday/icaltoday.swift
 
 # Run tests with the SWIFT_FLAGS
 test: check_evkit
-	echo "SWIFT_FLAGS: $(SWIFT_FLAGS)"
 	xcrun swift test $$SWIFT_FLAGS
 
 
