@@ -50,10 +50,47 @@ extension EKEvent {
             return .overlapsAtEnd
         } else if thisStart >= otherStart && thisEnd <= otherEnd {
             return .within
-        } else {
+        } else if thisStart <= otherStart && thisEnd >= otherEnd{
             return .encompasses
+        } else {
+            fatalError("Unhandled case")
         }
     }
+}
+
+/// Subtracts an event from another event and returns the resulting events.
+/// - Parameters:
+///   - event: The event to subtract.
+///   - otherEvent: The event to subtract from.
+/// - Returns: An array of `EKEvent` objects representing the resulting events.
+func subtractEvents(_ event: EKEvent, from otherEvent: EKEvent) -> [EKEvent] {
+  let comparisonResult = event.compare(to: otherEvent)
+  switch comparisonResult {
+  case .same:
+    return []
+  case .before, .after:
+    return [event]
+  case .overlapsAtStart:
+    let newEvent = EKEvent(eventStore: EKEventStore())
+    newEvent.startDate = otherEvent.endDate
+    newEvent.endDate = event.endDate
+    return [newEvent]
+  case .overlapsAtEnd:
+    let newEvent = EKEvent(eventStore: EKEventStore())
+    newEvent.startDate = event.startDate
+    newEvent.endDate = otherEvent.startDate
+    return [newEvent]
+  case .within:
+    return []
+  case .encompasses:
+    let newEvent1 = EKEvent(eventStore: EKEventStore())
+    newEvent1.startDate = event.startDate
+    newEvent1.endDate = otherEvent.startDate
+    let newEvent2 = EKEvent(eventStore: EKEventStore())
+    newEvent2.startDate = otherEvent.endDate
+    newEvent2.endDate = event.endDate
+    return [newEvent1, newEvent2]
+  }
 }
 
 
