@@ -211,3 +211,19 @@ func testTimeOfDayInit() {
     let time3 = TimeOfDay(hour: 10, minute: 60)
     XCTAssertNil(time3)
 }
+
+func testgetTimeBlockEvents() {
+    let startDate = Date()
+    let endDate = Calendar.current.date(byAdding: .day, value: 7, to: startDate)!
+    let startTime = TimeOfDay(hour: 9, minute: 0)!
+    let endTime = TimeOfDay(hour: 17, minute: 0)!
+    
+    let availabilityEvents = getTimeBlockEvents(startDate: startDate, endDate: endDate, startTime: startTime, endTime: endTime)
+    
+    XCTAssertEqual(availabilityEvents.count, 8)
+    
+    for event in availabilityEvents {
+        XCTAssertEqual(event.startDate, Calendar.current.date(bySettingHour: startTime.hour, minute: startTime.minute, second: 0, of: event.startDate))
+        XCTAssertEqual(event.endDate, Calendar.current.date(bySettingHour: endTime.hour, minute: endTime.minute, second: 0, of: event.endDate))
+    }
+}

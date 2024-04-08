@@ -290,6 +290,28 @@ extension TimeOfDay: ExpressibleByArgument {
   }
 }
 
+// This function takes four arguments
+// - startDate: The start date of the availability check
+// - endDate: The end date of the availability check
+// - startTime: The start time of the availability check for each day
+// - endTime: The end time of the availability check for each day
+// It returns a list of EKEvents that represent one event per day
+// between startDate and endDate, with the start and end times set.
+func getTimeBlockEvents(startDate: Date, endDate: Date, startTime: TimeOfDay, endTime: TimeOfDay) -> [EKEvent] {
+  var availabilityEvents = [EKEvent]()
+  let calendar = Calendar.current
+  var currentDate = startDate
+  while currentDate <= endDate {
+    let event = EKEvent(eventStore: EKEventStore())
+    event.startDate = calendar.date(bySettingHour: startTime.hour, minute: startTime.minute, second: 0, of: currentDate)!
+    event.endDate = calendar.date(bySettingHour: endTime.hour, minute: endTime.minute, second: 0, of: currentDate)!
+    availabilityEvents.append(event)
+    currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+  }
+  return availabilityEvents
+}
+
+
 // Function that returns true if authorizationStatus provides access
 // to the calendar. Handles old version of macOS.
 func hasAccessToCalendar(_ authorizationStatus: EKAuthorizationStatus) -> Bool {
@@ -431,3 +453,4 @@ struct icaltoday: ParsableCommand {
     }
   }
 }
+
