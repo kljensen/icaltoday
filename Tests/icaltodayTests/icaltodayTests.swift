@@ -212,7 +212,7 @@ func testTimeOfDayInit() {
     XCTAssertNil(time3)
 }
 
-func testgetTimeBlockEvents() {
+func testGetTimeBlockEvents() {
     let startDate = Date()
     let endDate = Calendar.current.date(byAdding: .day, value: 7, to: startDate)!
     let startTime = TimeOfDay(hour: 9, minute: 0)!
