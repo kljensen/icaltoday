@@ -240,7 +240,7 @@ func listAllCalendarsAsJSON(withEventStore eventStore: EKEventStore) {
 // A class that represents an hour and minute of the day. Can only
 // represent times between 00:00 and 23:59. Is only initialized with
 // valid times.
-class TimeOfDay {
+final class TimeOfDay {
   var hour: Int
   var minute: Int
 
@@ -250,6 +250,19 @@ class TimeOfDay {
     }
     self.hour = hour
     self.minute = minute
+  }
+
+  // Init from string
+  init?(fromString string: String) {
+    let components = string.components(separatedBy: ":")
+    guard components.count == 2,
+          let hour = Int(components[0]),
+          let minute = Int(components[1]),
+          let time = TimeOfDay(hour: hour, minute: minute) else {
+      return nil
+    }
+    self.hour = time.hour
+    self.minute = time.minute
   }
 
   // Returns a string representation of the time in the format "HH:MM"
@@ -265,17 +278,15 @@ class TimeOfDay {
     return dateComponents
   }
 
-  // Initialize from a string in the format "HH:MM"
-  convenience init?(fromString string: String) {
-    let components = string.components(separatedBy: ":")
-    if components.count != 2 {
-      return nil
-    }
-    if let hour = Int(components[0]), let minute = Int(components[1]) {
-      self.init(hour: hour, minute: minute)
-    } else {
-      return nil
-    }
+}
+
+// Make TimeOfDay conform to ExpressibleByArgument
+extension TimeOfDay: ExpressibleByArgument {
+  /// Initializes a new instance of `TimeOfDay` by parsing the given argument as a time of day.
+  /// - Parameter argument: The string representation of the time to be parsed.
+  /// - Returns: An initialized `TimeOfDay` instance if the argument can be successfully parsed as a time of day; otherwise, `nil`.
+  convenience init?(argument: String) {
+    self.init(fromString: argument)
   }
 }
 
@@ -297,7 +308,7 @@ func hasAccessToCalendar(_ authorizationStatus: EKAuthorizationStatus) -> Bool {
 struct icaltoday: ParsableCommand {
   static var configuration = CommandConfiguration(
     abstract: "A utility for performing querying calendars and events on Mac OS.",
-    subcommands: [Calendars.self, Events.self, Authorize.self]
+    subcommands: [Calendars.self, Events.self, Authorize.self, Availability.self]
   )
   struct Calendars: ParsableCommand {
     static var configuration = CommandConfiguration(
@@ -385,6 +396,13 @@ struct icaltoday: ParsableCommand {
       var startDate: Date
       @Argument
       var endDate: Date
+      // StartTime must be in the format "HH:MM"
+      @Argument
+      var startTime: TimeOfDay
+      // EndTime must be in the format "HH:MM"
+      @Argument
+      var endTime: TimeOfDay
+
       // Option for calendars to *exclude* from the availability check
       @Option(name: [.short, .customLong("exclude")])
       var excludeCalendarNames: [String] = []
@@ -405,10 +423,11 @@ struct icaltoday: ParsableCommand {
         // For now, just log the arguments
         print("Start date: \(startDate)")
         print("End date: \(endDate)")
+        print("Start time: \(startTime.toString())")
+        print("End time: \(endTime.toString())")
         print("Exclude calendars: \(excludeCalendarNames)")
         print("Include calendars: \(includeCalendarNames)")
       }
     }
   }
 }
-
