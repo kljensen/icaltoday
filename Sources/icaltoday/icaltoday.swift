@@ -237,22 +237,46 @@ func listAllCalendarsAsJSON(withEventStore eventStore: EKEventStore) {
   print(String(data: data, encoding: .utf8)!)
 }
 
-// Parse time ranges from the command line. These should be of the
-// format "8:32-9:45". It returns a tuple of two dates.
-func parseTimeRange(_ timeRange: String) -> (Date, Date)? {
-  let components = timeRange.components(separatedBy: "-")
-  if components.count != 2 {
-    return nil
+// A class that represents an hour and minute of the day. Can only
+// represent times between 00:00 and 23:59. Is only initialized with
+// valid times.
+class TimeOfDay {
+  var hour: Int
+  var minute: Int
+
+  init?(hour: Int, minute: Int) {
+    if hour < 0 || hour > 23 || minute < 0 || minute > 59 {
+      return nil
+    }
+    self.hour = hour
+    self.minute = minute
   }
-  // Parse assuming GMT
-  let dateFormatter = DateFormatter()
-  dateFormatter.dateFormat = "HH:mm"
-  dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-  if let startDate = dateFormatter.date(from: components[0]),
-     let endDate = dateFormatter.date(from: components[1]) {
-    return (startDate, endDate)
+
+  // Returns a string representation of the time in the format "HH:MM"
+  func toString() -> String {
+    return String(format: "%02d:%02d", hour, minute)
   }
-  return nil
+
+  // Convert to DateComponents
+  func toDateComponents() -> DateComponents {
+    var dateComponents = DateComponents()
+    dateComponents.hour = hour
+    dateComponents.minute = minute
+    return dateComponents
+  }
+
+  // Initialize from a string in the format "HH:MM"
+  convenience init?(fromString string: String) {
+    let components = string.components(separatedBy: ":")
+    if components.count != 2 {
+      return nil
+    }
+    if let hour = Int(components[0]), let minute = Int(components[1]) {
+      self.init(hour: hour, minute: minute)
+    } else {
+      return nil
+    }
+  }
 }
 
 // Function that returns true if authorizationStatus provides access

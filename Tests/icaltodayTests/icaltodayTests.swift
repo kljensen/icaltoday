@@ -16,21 +16,6 @@ func makeEvent(start: TimeInterval, end: TimeInterval) -> EKEvent {
 }
 
 final class icaltodayTests: XCTestCase {
-    func testparseTimeRange() {
-        // Tests the parseTimeRange function in the icaltoday module
-        let timeRange = parseTimeRange("10:00-11:00")
-        // Assert that we didn't get back nil
-        XCTAssertNotNil(timeRange)
-        // Test at the first element of the tuple has a time of 10:00.
-        // It is a Date object, so we need to convert it to a string to compare it.
-        XCTAssertEqual(timeRange!.0.description, "2000-01-01 10:00:00 +0000")
-        XCTAssertEqual(timeRange!.1.description, "2000-01-01 11:00:00 +0000")
-
-        // Try an invalid time range
-        let invalidTimeRange = parseTimeRange("10:00-")
-        XCTAssertNil(invalidTimeRange)
-
-    }
     func testSortEventsByStartDate(){
         let numEvents = 10
         var events = [EKEvent]()
@@ -155,4 +140,74 @@ func testsubtractEvents() {
     XCTAssertEqual(subtractedEvents7[0].endDate, event5.startDate)
     XCTAssertEqual(subtractedEvents7[1].startDate, event5.endDate)
     XCTAssertEqual(subtractedEvents7[1].endDate, event1.endDate)
+}
+
+func testTimeOfDayToString() {
+    // Test case 1: Valid time
+    let time1 = TimeOfDay(hour: 10, minute: 30)
+    XCTAssertEqual(time1?.toString(), "10:30")
+    
+    // Test case 2: Time with single digit hour and minute
+    let time2 = TimeOfDay(hour: 5, minute: 5)
+    XCTAssertEqual(time2?.toString(), "05:05")
+    
+    // Test case 3: Time with leading zero hour and minute
+    let time3 = TimeOfDay(hour: 0, minute: 0)
+    XCTAssertEqual(time3?.toString(), "00:00")
+}
+
+func testTimeOfDayToDateComponents() {
+    // Test case 1: Valid time
+    let time1 = TimeOfDay(hour: 10, minute: 30)
+    let dateComponents1 = time1?.toDateComponents()
+    XCTAssertEqual(dateComponents1?.hour, 10)
+    XCTAssertEqual(dateComponents1?.minute, 30)
+    
+    // Test case 2: Time with single digit hour and minute
+    let time2 = TimeOfDay(hour: 5, minute: 5)
+    let dateComponents2 = time2?.toDateComponents()
+    XCTAssertEqual(dateComponents2?.hour, 5)
+    XCTAssertEqual(dateComponents2?.minute, 5)
+    
+    // Test case 3: Time with leading zero hour and minute
+    let time3 = TimeOfDay(hour: 0, minute: 0)
+    let dateComponents3 = time3?.toDateComponents()
+    XCTAssertEqual(dateComponents3?.hour, 0)
+    XCTAssertEqual(dateComponents3?.minute, 0)
+}
+
+func testTimeOfDayInitFromString() {
+    // Test case 1: Valid time string
+    let time1 = TimeOfDay(fromString: "10:30")
+    XCTAssertEqual(time1?.hour, 10)
+    XCTAssertEqual(time1?.minute, 30)
+    
+    // Test case 2: Time string with single digit hour and minute
+    let time2 = TimeOfDay(fromString: "5:5")
+    XCTAssertEqual(time2?.hour, 5)
+    XCTAssertEqual(time2?.minute, 5)
+    
+    // Test case 3: Time string with leading zero hour and minute
+    let time3 = TimeOfDay(fromString: "00:00")
+    XCTAssertEqual(time3?.hour, 0)
+    XCTAssertEqual(time3?.minute, 0)
+    
+    // Test case 4: Invalid time string
+    let time4 = TimeOfDay(fromString: "10:30:00")
+    XCTAssertNil(time4)
+}
+
+func testTimeOfDayInit() {
+    // Test case 1: Valid time
+    let time1 = TimeOfDay(hour: 10, minute: 30)
+    XCTAssertEqual(time1?.hour, 10)
+    XCTAssertEqual(time1?.minute, 30)
+    
+    // Test case 2: Invalid hour
+    let time2 = TimeOfDay(hour: 24, minute: 30)
+    XCTAssertNil(time2)
+    
+    // Test case 3: Invalid minute
+    let time3 = TimeOfDay(hour: 10, minute: 60)
+    XCTAssertNil(time3)
 }
