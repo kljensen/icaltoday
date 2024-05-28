@@ -29,33 +29,33 @@ extension EKEvent {
   var calendarItemExternalIdentifierAsBase64: String {
     return Data(self.calendarItemExternalIdentifier.utf8).base64EncodedString()
   }
-    /// Compares this event with another event to determine their temporal relationship.
-    /// - Parameter event: The other `EKEvent` instance to compare against.
-    /// - Returns: An `EventComparisonResult` indicating how the events compare.
-    func compare(to event: EKEvent) -> EventComparisonResult {
-        guard let thisStart = self.startDate, let thisEnd = self.endDate,
-              let otherStart = event.startDate, let otherEnd = event.endDate else {
-            fatalError("One or both events do not have both start and end dates set.")
-        }
+  /// Compares this event with another event to determine their temporal relationship.
+  /// - Parameter event: The other `EKEvent` instance to compare against.
+  /// - Returns: An `EventComparisonResult` indicating how the events compare.
+  func compare(to event: EKEvent) -> EventComparisonResult {
+      guard let thisStart = self.startDate, let thisEnd = self.endDate,
+            let otherStart = event.startDate, let otherEnd = event.endDate else {
+          fatalError("One or both events do not have both start and end dates set.")
+      }
 
-        if thisStart == otherStart && thisEnd == otherEnd {
-            return .same
-        } else if thisEnd <= otherStart {
-            return .before
-        } else if thisStart >= otherEnd {
-            return .after
-        } else if thisStart < otherStart && thisEnd < otherEnd {
-            return .overlapsAtStart
-        } else if thisStart > otherStart && thisEnd > otherEnd {
-            return .overlapsAtEnd
-        } else if thisStart >= otherStart && thisEnd <= otherEnd {
-            return .within
-        } else if thisStart <= otherStart && thisEnd >= otherEnd{
-            return .encompasses
-        } else {
-            fatalError("Unhandled case")
-        }
-    }
+      if thisStart == otherStart && thisEnd == otherEnd {
+          return .same
+      } else if thisEnd <= otherStart {
+          return .before
+      } else if thisStart >= otherEnd {
+          return .after
+      } else if thisStart < otherStart && thisEnd < otherEnd {
+          return .overlapsAtStart
+      } else if thisStart > otherStart && thisEnd > otherEnd {
+          return .overlapsAtEnd
+      } else if thisStart >= otherStart && thisEnd <= otherEnd {
+          return .within
+      } else if thisStart <= otherStart && thisEnd >= otherEnd{
+          return .encompasses
+      } else {
+          fatalError("Unhandled case")
+      }
+  }
 }
 
 /// Subtracts an event from another event and returns the resulting events.
