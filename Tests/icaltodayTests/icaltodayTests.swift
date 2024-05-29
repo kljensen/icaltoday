@@ -121,10 +121,9 @@ final class icaltodayTests: XCTestCase {
 
     func testSubtractEvents() {
         let event1 = makeEvent(start: 0, end: 10)
-        // let event2 = makeEvent(start: 5, end: 15)
         let event3 = makeEvent(start: 20, end: 30)
         let event4 = makeEvent(start: 25, end: 35)
-        // let event5 = makeEvent(start: 40, end: 50)
+        let event5 = makeEvent(start: 10, end: 50)
         
         // Test case 1: Same events
         XCTAssertEqual(event1.subtract(event1), [])
@@ -141,22 +140,22 @@ final class icaltodayTests: XCTestCase {
         XCTAssertEqual(subtractedEvents4[0].startDate, event3.startDate)
         XCTAssertEqual(subtractedEvents4[0].endDate, event4.startDate)
         
-        // // Test case 5: Event overlaps at end of otherEvent
-        // let subtractedEvents5 = subtractEvents(event2, from: event4)
-        // XCTAssertEqual(subtractedEvents5.count, 1)
-        // XCTAssertEqual(subtractedEvents5[0].startDate, event2.startDate)
-        // XCTAssertEqual(subtractedEvents5[0].endDate, event4.startDate)
+        // Test case 5: Event overlaps at end of otherEvent
+        let subtractedEvents5 = event4.subtract(event3)
+        XCTAssertEqual(subtractedEvents5.count, 1)
+        XCTAssertEqual(subtractedEvents5[0].startDate, event3.endDate)
+        XCTAssertEqual(subtractedEvents5[0].endDate, event4.endDate)
         
-        // // Test case 6: Event is within otherEvent
-        // XCTAssertEqual(subtractEvents(event2, from: event3), [])
+        // Test case 6: Event is within otherEvent
+        XCTAssertEqual(event3.subtract(event5), [])
         
-        // // Test case 7: Event encompasses otherEvent
-        // let subtractedEvents7 = subtractEvents(event1, from: event5)
-        // XCTAssertEqual(subtractedEvents7.count, 2)
-        // XCTAssertEqual(subtractedEvents7[0].startDate, event1.startDate)
-        // XCTAssertEqual(subtractedEvents7[0].endDate, event5.startDate)
-        // XCTAssertEqual(subtractedEvents7[1].startDate, event5.endDate)
-        // XCTAssertEqual(subtractedEvents7[1].endDate, event1.endDate)
+        // Test case 7: Event encompasses otherEvent
+        let subtractedEvents7 = event5.subtract(event3)
+        XCTAssertEqual(subtractedEvents7.count, 2)
+        XCTAssertEqual(subtractedEvents7[0].startDate, event5.startDate)
+        XCTAssertEqual(subtractedEvents7[0].endDate, event3.startDate)
+        XCTAssertEqual(subtractedEvents7[1].startDate, event3.endDate)
+        XCTAssertEqual(subtractedEvents7[1].endDate, event5.endDate)
     }
 
 }
