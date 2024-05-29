@@ -8,8 +8,11 @@ enum EventComparisonResult {
     case same
     case before
     case after
+    // The first event begins before the second event and ends within it
     case overlapsAtStart
+    // The first event begins within the second event and ends after it
     case overlapsAtEnd
+    // The first event is completely within the second event
     case within
     case encompasses
 }
@@ -64,17 +67,16 @@ extension EKEvent {
       case .before, .after:
           return [self]
       case .overlapsAtStart:
-          print("overlapsAtStart")
-          let newEvent = EKEvent(eventStore: EKEventStore())
-          newEvent.startDate = event.endDate
-          newEvent.endDate = self.endDate
-          return [newEvent]
-      case .overlapsAtEnd:
-          // print a debug message
-          print("overlapsAtEnd")
+          // self begins before the second event and ends within it
           let newEvent = EKEvent(eventStore: EKEventStore())
           newEvent.startDate = self.startDate
           newEvent.endDate = event.startDate
+          return [newEvent]
+      case .overlapsAtEnd:
+          // self begins within the second event and ends after it
+          let newEvent = EKEvent(eventStore: EKEventStore())
+          newEvent.startDate = event.endDate
+          newEvent.endDate = self.endDate
           return [newEvent]
       case .within:
           return []
