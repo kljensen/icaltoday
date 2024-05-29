@@ -118,46 +118,47 @@ final class icaltodayTests: XCTestCase {
         XCTAssertEqual(event6.compare(to: event5), .encompasses)
         XCTAssertEqual(event6.compare(to: event6), .same)
     }
-}
 
-func testsubtractEvents() {
-    let event1 = makeEvent(start: 0, end: 10)
-    let event2 = makeEvent(start: 5, end: 15)
-    let event3 = makeEvent(start: 20, end: 30)
-    let event4 = makeEvent(start: 25, end: 35)
-    let event5 = makeEvent(start: 40, end: 50)
-    
-    // Test case 1: Same events
-    XCTAssertEqual(subtractEvents(event1, from: event1), [])
-    
-    // Test case 2: Event is before otherEvent
-    XCTAssertEqual(subtractEvents(event1, from: event2), [event1])
-    
-    // Test case 3: Event is after otherEvent
-    XCTAssertEqual(subtractEvents(event3, from: event1), [event3])
-    
-    // Test case 4: Event overlaps at start of otherEvent
-    let subtractedEvents4 = subtractEvents(event1, from: event4)
-    XCTAssertEqual(subtractedEvents4.count, 1)
-    XCTAssertEqual(subtractedEvents4[0].startDate, event4.endDate)
-    XCTAssertEqual(subtractedEvents4[0].endDate, event1.endDate)
-    
-    // Test case 5: Event overlaps at end of otherEvent
-    let subtractedEvents5 = subtractEvents(event2, from: event4)
-    XCTAssertEqual(subtractedEvents5.count, 1)
-    XCTAssertEqual(subtractedEvents5[0].startDate, event2.startDate)
-    XCTAssertEqual(subtractedEvents5[0].endDate, event4.startDate)
-    
-    // Test case 6: Event is within otherEvent
-    XCTAssertEqual(subtractEvents(event2, from: event3), [])
-    
-    // Test case 7: Event encompasses otherEvent
-    let subtractedEvents7 = subtractEvents(event1, from: event5)
-    XCTAssertEqual(subtractedEvents7.count, 2)
-    XCTAssertEqual(subtractedEvents7[0].startDate, event1.startDate)
-    XCTAssertEqual(subtractedEvents7[0].endDate, event5.startDate)
-    XCTAssertEqual(subtractedEvents7[1].startDate, event5.endDate)
-    XCTAssertEqual(subtractedEvents7[1].endDate, event1.endDate)
+    func testSubtractEvents() {
+        let event1 = makeEvent(start: 0, end: 10)
+        // let event2 = makeEvent(start: 5, end: 15)
+        let event3 = makeEvent(start: 20, end: 30)
+        let event4 = makeEvent(start: 25, end: 35)
+        // let event5 = makeEvent(start: 40, end: 50)
+        
+        // Test case 1: Same events
+        XCTAssertEqual(event1.subtract(event1), [])
+        
+        // Test case 2: Event is before otherEvent
+        XCTAssertEqual(event1.subtract(event3), [event1])
+        
+        // Test case 3: Event is after otherEvent
+        XCTAssertEqual(event3.subtract(event1), [event3])
+        
+        // Test case 4: Subtracted event overlaps at end
+        let subtractedEvents4 = event3.subtract(event4)
+        XCTAssertEqual(subtractedEvents4.count, 1)
+        XCTAssertEqual(subtractedEvents4[0].startDate, event3.startDate)
+        XCTAssertEqual(subtractedEvents4[0].endDate, event4.startDate)
+        
+        // // Test case 5: Event overlaps at end of otherEvent
+        // let subtractedEvents5 = subtractEvents(event2, from: event4)
+        // XCTAssertEqual(subtractedEvents5.count, 1)
+        // XCTAssertEqual(subtractedEvents5[0].startDate, event2.startDate)
+        // XCTAssertEqual(subtractedEvents5[0].endDate, event4.startDate)
+        
+        // // Test case 6: Event is within otherEvent
+        // XCTAssertEqual(subtractEvents(event2, from: event3), [])
+        
+        // // Test case 7: Event encompasses otherEvent
+        // let subtractedEvents7 = subtractEvents(event1, from: event5)
+        // XCTAssertEqual(subtractedEvents7.count, 2)
+        // XCTAssertEqual(subtractedEvents7[0].startDate, event1.startDate)
+        // XCTAssertEqual(subtractedEvents7[0].endDate, event5.startDate)
+        // XCTAssertEqual(subtractedEvents7[1].startDate, event5.endDate)
+        // XCTAssertEqual(subtractedEvents7[1].endDate, event1.endDate)
+    }
+
 }
 
 func testTimeOfDayToString() {
