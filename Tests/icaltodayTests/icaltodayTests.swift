@@ -95,7 +95,7 @@ final class icaltodayTests: XCTestCase {
         XCTAssertEqual(event3.compare(to: event3), .same)
         XCTAssertEqual(event3.compare(to: event4), .overlapsAtStart)
         XCTAssertEqual(event3.compare(to: event5), .before)
-        XCTAssertEqual(event3.compare(to: event6), .within)
+        XCTAssertEqual(event3.compare(to: event6), .overlapsAtStart)
         
         XCTAssertEqual(event4.compare(to: event1), .after)
         XCTAssertEqual(event4.compare(to: event2), .after)
@@ -124,6 +124,7 @@ final class icaltodayTests: XCTestCase {
         let event3 = makeEvent(start: 20, end: 30)
         let event4 = makeEvent(start: 25, end: 35)
         let event5 = makeEvent(start: 10, end: 50)
+        let event6 = makeEvent(start: 10, end: 40)
         
         // Test case 1: Same events
         XCTAssertEqual(event1.subtract(event1), [])
@@ -156,6 +157,34 @@ final class icaltodayTests: XCTestCase {
         XCTAssertEqual(subtractedEvents7[0].endDate, event3.startDate)
         XCTAssertEqual(subtractedEvents7[1].startDate, event3.endDate)
         XCTAssertEqual(subtractedEvents7[1].endDate, event5.endDate)
+
+        let subtractedEvents8 = event5.subtract(event6)
+        XCTAssertEqual(subtractedEvents8.count, 1)
+    }
+
+    func testSubtractListOfEvents() {
+        let possiblePeriod = makeEvent(start: 0, end: 100)
+        let busy10to20 = makeEvent(start: 10, end: 20)
+        let busy20to30 = makeEvent(start: 20, end: 30)
+        // let busy30to40 = makeEvent(start: 30, end: 40)
+        // let busy40to50 = makeEvent(start: 40, end: 50)
+        // let busy50to60 = makeEvent(start: 50, end: 60)
+
+        // Test case 1: Subtracting a list of events from a period
+        let avail1 = possiblePeriod.subtract([busy10to20])
+        XCTAssertEqual(avail1.count, 2)
+        XCTAssertEqual(avail1[0].startDate, possiblePeriod.startDate)
+        XCTAssertEqual(avail1[0].endDate, busy10to20.startDate)
+        XCTAssertEqual(avail1[1].startDate, busy10to20.endDate)
+        XCTAssertEqual(avail1[1].endDate, possiblePeriod.endDate)
+
+        let avail2 = possiblePeriod.subtract([busy10to20, busy20to30])
+        XCTAssertEqual(avail2.count, 2)
+        XCTAssertEqual(avail2[0].startDate, possiblePeriod.startDate)
+        XCTAssertEqual(avail2[0].endDate, busy10to20.startDate)
+        XCTAssertEqual(avail2[1].startDate, busy20to30.endDate)
+        XCTAssertEqual(avail2[1].endDate, possiblePeriod.endDate)
+
     }
 
 }

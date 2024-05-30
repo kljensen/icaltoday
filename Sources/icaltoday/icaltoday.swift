@@ -48,14 +48,14 @@ extension EKEvent {
       return .before
     } else if thisStart >= otherEnd {
       return .after
-    } else if thisStart < otherStart && thisEnd < otherEnd {
+    } else if thisStart <= otherStart && thisEnd < otherEnd {
       return .overlapsAtStart
-    } else if thisStart > otherStart && thisEnd > otherEnd {
+    } else if thisStart > otherStart && thisEnd >= otherEnd {
       return .overlapsAtEnd
-    } else if thisStart >= otherStart && thisEnd <= otherEnd {
-      return .within
     } else if thisStart <= otherStart && thisEnd >= otherEnd {
       return .encompasses
+    } else if thisStart >= otherStart && thisEnd <= otherEnd {
+      return .within
     } else {
       fatalError("Unhandled case")
     }
@@ -82,14 +82,35 @@ extension EKEvent {
     case .within:
       return []
     case .encompasses:
-      let newEvent1 = EKEvent(eventStore: EKEventStore())
-      newEvent1.startDate = self.startDate
-      newEvent1.endDate = event.startDate
-      let newEvent2 = EKEvent(eventStore: EKEventStore())
-      newEvent2.startDate = event.endDate
-      newEvent2.endDate = self.endDate
-      return [newEvent1, newEvent2]
+      // The first encompases the second. 
+      var events = [EKEvent]();
+      if (self.startDate != event.startDate) {
+        let newEvent1 = EKEvent(eventStore: EKEventStore())
+        newEvent1.startDate = self.startDate
+        newEvent1.endDate = event.startDate
+        events.append(newEvent1)
+      }
+      if (self.endDate != event.endDate) {
+        let newEvent2 = EKEvent(eventStore: EKEventStore())
+        newEvent2.startDate = event.endDate
+        newEvent2.endDate = self.endDate
+        events.append(newEvent2)
+      }
+      return events
     }
+  }
+  // Overload subtract to handle multiple events
+  func subtract(_ events: [EKEvent]) -> [EKEvent] {
+    var remainingEvents = [self]
+    for event in events {
+      var newRemainingEvents = [EKEvent]()
+      for remainingEvent in remainingEvents {
+        let subtractedEvents = remainingEvent.subtract(event)
+        newRemainingEvents.append(contentsOf: subtractedEvents)
+      }
+      remainingEvents = newRemainingEvents
+    }
+    return remainingEvents
   }
 }
 
