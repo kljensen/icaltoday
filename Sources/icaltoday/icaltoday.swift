@@ -5,16 +5,16 @@ import Foundation
 
 // Assuming EventComparisonResult enum is defined as previously discussed
 enum EventComparisonResult {
-    case same
-    case before
-    case after
-    // The first event begins before the second event and ends within it
-    case overlapsAtStart
-    // The first event begins within the second event and ends after it
-    case overlapsAtEnd
-    // The first event is completely within the second event
-    case within
-    case encompasses
+  case same
+  case before
+  case after
+  // The first event begins before the second event and ends within it
+  case overlapsAtStart
+  // The first event begins within the second event and ends after it
+  case overlapsAtEnd
+  // The first event is completely within the second event
+  case within
+  case encompasses
 }
 extension EKEvent {
   func isToday() -> Bool {
@@ -36,97 +36,62 @@ extension EKEvent {
   /// - Parameter event: The other `EKEvent` instance to compare against.
   /// - Returns: An `EventComparisonResult` indicating how the events compare.
   func compare(to event: EKEvent) -> EventComparisonResult {
-      guard let thisStart = self.startDate, let thisEnd = self.endDate,
-            let otherStart = event.startDate, let otherEnd = event.endDate else {
-          fatalError("One or both events do not have both start and end dates set.")
-      }
+    guard let thisStart = self.startDate, let thisEnd = self.endDate,
+      let otherStart = event.startDate, let otherEnd = event.endDate
+    else {
+      fatalError("One or both events do not have both start and end dates set.")
+    }
 
-      if thisStart == otherStart && thisEnd == otherEnd {
-          return .same
-      } else if thisEnd <= otherStart {
-          return .before
-      } else if thisStart >= otherEnd {
-          return .after
-      } else if thisStart < otherStart && thisEnd < otherEnd {
-          return .overlapsAtStart
-      } else if thisStart > otherStart && thisEnd > otherEnd {
-          return .overlapsAtEnd
-      } else if thisStart >= otherStart && thisEnd <= otherEnd {
-          return .within
-      } else if thisStart <= otherStart && thisEnd >= otherEnd{
-          return .encompasses
-      } else {
-          fatalError("Unhandled case")
-      }
+    if thisStart == otherStart && thisEnd == otherEnd {
+      return .same
+    } else if thisEnd <= otherStart {
+      return .before
+    } else if thisStart >= otherEnd {
+      return .after
+    } else if thisStart < otherStart && thisEnd < otherEnd {
+      return .overlapsAtStart
+    } else if thisStart > otherStart && thisEnd > otherEnd {
+      return .overlapsAtEnd
+    } else if thisStart >= otherStart && thisEnd <= otherEnd {
+      return .within
+    } else if thisStart <= otherStart && thisEnd >= otherEnd {
+      return .encompasses
+    } else {
+      fatalError("Unhandled case")
+    }
   }
   func subtract(_ event: EKEvent) -> [EKEvent] {
-      let comparisonResult = self.compare(to: event)
-      switch comparisonResult {
-      case .same:
-          return []
-      case .before, .after:
-          return [self]
-      case .overlapsAtStart:
-          // self begins before the second event and ends within it
-          let newEvent = EKEvent(eventStore: EKEventStore())
-          newEvent.startDate = self.startDate
-          newEvent.endDate = event.startDate
-          return [newEvent]
-      case .overlapsAtEnd:
-          // self begins within the second event and ends after it
-          let newEvent = EKEvent(eventStore: EKEventStore())
-          newEvent.startDate = event.endDate
-          newEvent.endDate = self.endDate
-          return [newEvent]
-      case .within:
-          return []
-      case .encompasses:
-          let newEvent1 = EKEvent(eventStore: EKEventStore())
-          newEvent1.startDate = self.startDate
-          newEvent1.endDate = event.startDate
-          let newEvent2 = EKEvent(eventStore: EKEventStore())
-          newEvent2.startDate = event.endDate
-          newEvent2.endDate = self.endDate
-          return [newEvent1, newEvent2]
-      }
+    let comparisonResult = self.compare(to: event)
+    switch comparisonResult {
+    case .same:
+      return []
+    case .before, .after:
+      return [self]
+    case .overlapsAtStart:
+      // self begins before the second event and ends within it
+      let newEvent = EKEvent(eventStore: EKEventStore())
+      newEvent.startDate = self.startDate
+      newEvent.endDate = event.startDate
+      return [newEvent]
+    case .overlapsAtEnd:
+      // self begins within the second event and ends after it
+      let newEvent = EKEvent(eventStore: EKEventStore())
+      newEvent.startDate = event.endDate
+      newEvent.endDate = self.endDate
+      return [newEvent]
+    case .within:
+      return []
+    case .encompasses:
+      let newEvent1 = EKEvent(eventStore: EKEventStore())
+      newEvent1.startDate = self.startDate
+      newEvent1.endDate = event.startDate
+      let newEvent2 = EKEvent(eventStore: EKEventStore())
+      newEvent2.startDate = event.endDate
+      newEvent2.endDate = self.endDate
+      return [newEvent1, newEvent2]
+    }
   }
 }
-
-/// Subtracts an event from another event and returns the resulting events.
-/// - Parameters:
-///   - event: The event to subtract.
-///   - otherEvent: The event to subtract from.
-/// - Returns: An array of `EKEvent` objects representing the resulting events.
-// func subtractEvents(_ event: EKEvent, from otherEvent: EKEvent) -> [EKEvent] {
-//   let comparisonResult = event.compare(to: otherEvent)
-//   switch comparisonResult {
-//   case .same:
-//     return []
-//   case .before, .after:
-//     return [event]
-//   case .overlapsAtStart:
-//     let newEvent = EKEvent(eventStore: EKEventStore())
-//     newEvent.startDate = otherEvent.endDate
-//     newEvent.endDate = event.endDate
-//     return [newEvent]
-//   case .overlapsAtEnd:
-//     let newEvent = EKEvent(eventStore: EKEventStore())
-//     newEvent.startDate = event.startDate
-//     newEvent.endDate = otherEvent.startDate
-//     return [newEvent]
-//   case .within:
-//     return []
-//   case .encompasses:
-//     let newEvent1 = EKEvent(eventStore: EKEventStore())
-//     newEvent1.startDate = event.startDate
-//     newEvent1.endDate = otherEvent.startDate
-//     let newEvent2 = EKEvent(eventStore: EKEventStore())
-//     newEvent2.startDate = otherEvent.endDate
-//     newEvent2.endDate = event.endDate
-//     return [newEvent1, newEvent2]
-//   }
-// }
-
 
 extension EKParticipant {
   var email: String? {
@@ -171,7 +136,7 @@ func sortEventsByStartDate(_ events: [EKEvent]) -> [EKEvent] {
 
 // Merge overlapping events. We take a list of EKEvents and return a list of EKEvents.
 // We sort them first by start date, then we iterate over the sorted list and merge
-// any events that are overlapping. 
+// any events that are overlapping.
 func mergeOverlappingEvents(_ events: [EKEvent]) -> [EKEvent] {
   // Handle the case where there are no events
   if events.count == 0 {
@@ -208,7 +173,10 @@ func getMatchingCalendars(eventStore: EKEventStore, calendarNames: [String]?) ->
   }
 }
 
-func printEventsAsJSON(withEventStore eventStore: EKEventStore, withCalendars calendars: [EKCalendar], withStart startDate: Date, withEnd endDate: Date) {
+func printEventsAsJSON(
+  withEventStore eventStore: EKEventStore, withCalendars calendars: [EKCalendar],
+  withStart startDate: Date, withEnd endDate: Date
+) {
   if calendars == [] {
     print("{}")
     return
@@ -290,9 +258,10 @@ final class TimeOfDay {
   init?(fromString string: String) {
     let components = string.components(separatedBy: ":")
     guard components.count == 2,
-          let hour = Int(components[0]),
-          let minute = Int(components[1]),
-          let time = TimeOfDay(hour: hour, minute: minute) else {
+      let hour = Int(components[0]),
+      let minute = Int(components[1]),
+      let time = TimeOfDay(hour: hour, minute: minute)
+    else {
       return nil
     }
     self.hour = time.hour
@@ -331,33 +300,36 @@ extension TimeOfDay: ExpressibleByArgument {
 // - endTime: The end time of the availability check for each day
 // It returns a list of EKEvents that represent one event per day
 // between startDate and endDate, with the start and end times set.
-func getTimeBlockEvents(startDate: Date, endDate: Date, startTime: TimeOfDay, endTime: TimeOfDay) -> [EKEvent] {
+func getTimeBlockEvents(startDate: Date, endDate: Date, startTime: TimeOfDay, endTime: TimeOfDay)
+  -> [EKEvent]
+{
   var availabilityEvents = [EKEvent]()
   let calendar = Calendar.current
   var currentDate = startDate
   while currentDate <= endDate {
     let event = EKEvent(eventStore: EKEventStore())
-    event.startDate = calendar.date(bySettingHour: startTime.hour, minute: startTime.minute, second: 0, of: currentDate)!
-    event.endDate = calendar.date(bySettingHour: endTime.hour, minute: endTime.minute, second: 0, of: currentDate)!
+    event.startDate = calendar.date(
+      bySettingHour: startTime.hour, minute: startTime.minute, second: 0, of: currentDate)!
+    event.endDate = calendar.date(
+      bySettingHour: endTime.hour, minute: endTime.minute, second: 0, of: currentDate)!
     availabilityEvents.append(event)
     currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
   }
   return availabilityEvents
 }
 
-
 // Function that returns true if authorizationStatus provides access
 // to the calendar. Handles old version of macOS.
 func hasAccessToCalendar(_ authorizationStatus: EKAuthorizationStatus) -> Bool {
-#if OLD_EVKIT
-  return authorizationStatus == .authorized
-#else
-  if #available(macOS 14, *) {
-      return authorizationStatus == .authorized  || authorizationStatus == .fullAccess
-  } else {
+  #if OLD_EVKIT
+    return authorizationStatus == .authorized
+  #else
+    if #available(macOS 14, *) {
+      return authorizationStatus == .authorized || authorizationStatus == .fullAccess
+    } else {
       return authorizationStatus == .authorized
-  }
-#endif
+    }
+  #endif
 }
 
 @main
@@ -379,7 +351,9 @@ struct icaltoday: ParsableCommand {
       mutating func run() throws {
         let status = EKEventStore.authorizationStatus(for: .event)
         if !hasAccessToCalendar(status) {
-          print("Access to the calendar is denied or restricted. Please grant access through System Preferences and try again.")
+          print(
+            "Access to the calendar is denied or restricted. Please grant access through System Preferences and try again."
+          )
           Foundation.exit(1)
         }
         let eventStore = EKEventStore()
@@ -406,12 +380,16 @@ struct icaltoday: ParsableCommand {
       mutating func run() throws {
         let status = EKEventStore.authorizationStatus(for: .event)
         if !hasAccessToCalendar(status) {
-          print("Access to the calendar is denied or restricted. Please grant access through System Preferences and try again.")
+          print(
+            "Access to the calendar is denied or restricted. Please grant access through System Preferences and try again."
+          )
           Foundation.exit(1)
         }
         let eventStore = EKEventStore()
         let calendars = getMatchingCalendars(eventStore: eventStore, calendarNames: calendarNames)
-        printEventsAsJSON(withEventStore: eventStore, withCalendars: calendars, withStart: startDate, withEnd: endDate)
+        printEventsAsJSON(
+          withEventStore: eventStore, withCalendars: calendars, withStart: startDate,
+          withEnd: endDate)
       }
     }
   }
@@ -422,12 +400,12 @@ struct icaltoday: ParsableCommand {
 
     func run() throws {
       let eventStore = EKEventStore()
-      let semaphore = DispatchSemaphore(value: 0) // Create a semaphore
+      let semaphore = DispatchSemaphore(value: 0)  // Create a semaphore
 
       print("Requesting access to the calendar...")
 
       eventStore.requestAccess(to: .event) { granted, error in
-        defer { semaphore.signal() } // Signal the semaphore in the defer block to ensure it always gets called
+        defer { semaphore.signal() }  // Signal the semaphore in the defer block to ensure it always gets called
 
         if let error = error {
           print("Error requesting access: \(error.localizedDescription)")
@@ -438,7 +416,7 @@ struct icaltoday: ParsableCommand {
         }
       }
 
-      semaphore.wait() // Wait for the semaphore to be signaled before exiting
+      semaphore.wait()  // Wait for the semaphore to be signaled before exiting
     }
   }
   // A subcommand to list availability between existing events
@@ -473,9 +451,11 @@ struct icaltoday: ParsableCommand {
         let status = EKEventStore.authorizationStatus(for: .event)
 
         if !hasAccessToCalendar(status) {
-          print("Access to the calendar is denied or restricted. Please grant access through System Preferences and try again.")
+          print(
+            "Access to the calendar is denied or restricted. Please grant access through System Preferences and try again."
+          )
           Foundation.exit(1)
-        } 
+        }
         // For now, just log the arguments
         print("Start date: \(startDate)")
         print("End date: \(endDate)")
@@ -487,4 +467,3 @@ struct icaltoday: ParsableCommand {
     }
   }
 }
-
