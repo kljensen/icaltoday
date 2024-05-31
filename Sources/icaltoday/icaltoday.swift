@@ -61,6 +61,9 @@ extension EKEvent {
     }
   }
   func subtract(_ event: EKEvent) -> [EKEvent] {
+    if(event.startDate == event.endDate){
+      return [self]
+    }
     let comparisonResult = self.compare(to: event)
     switch comparisonResult {
     case .same:
@@ -138,17 +141,31 @@ extension EKParticipant {
 struct SimpleEvent: Codable {
   var name: String
   var attendeeEmails: [String]
-  var date: Date
+  var startDate: Date
+  var endDate: Date
   var uid: String
   var uidAsBase64: String
   var isToday: Bool
   static func fromEKEvent(event: EKEvent) -> SimpleEvent {
     return SimpleEvent(
       name: event.title, attendeeEmails: event.attendees?.compactMap { $0.email } ?? [],
-      date: event.startDate, uid: event.calendarItemExternalIdentifier,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      uid: event.calendarItemExternalIdentifier,
       uidAsBase64: event.calendarItemExternalIdentifierAsBase64, isToday: event.isToday()
     )
   }
+}
+
+extension JSONEncoder {
+    static let localTimeEncoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        dateFormatter.timeZone = TimeZone.current
+        encoder.dateEncodingStrategy = .formatted(dateFormatter)
+        return encoder
+    }()
 }
 
 func sortEventsByStartDate(_ events: [EKEvent]) -> [EKEvent] {
@@ -194,6 +211,27 @@ func getMatchingCalendars(eventStore: EKEventStore, calendarNames: [String]?) ->
   }
 }
 
+func encodeToJSONString(events: [EKEvent]) -> String? {
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    
+    let dateFormatter = ISO8601DateFormatter()
+    dateFormatter.timeZone = TimeZone.current
+    encoder.dateEncodingStrategy = .custom({ date, encoder in
+        var container = encoder.singleValueContainer()
+        let dateString = dateFormatter.string(from: date)
+        try container.encode(dateString)
+    })
+    let simpleEvents = events.map { SimpleEvent.fromEKEvent(event: $0) } 
+    do {
+        let data = try encoder.encode(simpleEvents)
+        return String(data: data, encoding: .utf8)
+    } catch {
+        print("Error encoding meetings to JSON: \(error)")
+        return nil
+    }
+}
+
 func printEventsAsJSON(
   withEventStore eventStore: EKEventStore, withCalendars calendars: [EKCalendar],
   withStart startDate: Date, withEnd endDate: Date
@@ -206,14 +244,11 @@ func printEventsAsJSON(
     withStart: startDate, end: endDate, calendars: calendars
   )
   let events = eventStore.events(matching: predicate)
-  let meetings = events.map { SimpleEvent.fromEKEvent(event: $0) }
 
   // Print the events as JSON
-  let encoder = JSONEncoder()
-  encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-  encoder.dateEncodingStrategy = .iso8601
-  let data = try! encoder.encode(meetings)
-  print(String(data: data, encoding: .utf8)!)
+  if let jsonString = encodeToJSONString(events: events) {
+    print(jsonString)
+  }
 }
 
 /// Parses a string representation of a date and returns a `Date` object.
@@ -353,6 +388,48 @@ func hasAccessToCalendar(_ authorizationStatus: EKAuthorizationStatus) -> Bool {
   #endif
 }
 
+func listAvailability(
+  startDate: Date, endDate: Date, startTime: TimeOfDay, endTime: TimeOfDay,
+  excludeCalendarNames: [String], includeCalendarNames: [String],
+  excludeAllDayEvents: Bool
+) {
+
+  // Get the start by adding startDate to startTime
+  let startComponents = startTime.toDateComponents()
+  let endComponents = endTime.toDateComponents()
+  let startDateTime = Calendar.current.date(byAdding: startComponents, to: startDate)!
+  let endDateTime = Calendar.current.date(byAdding: endComponents, to: startDate)!
+
+  let eventStore = EKEventStore()
+  let calendars = getMatchingCalendars(eventStore: eventStore, calendarNames: includeCalendarNames)
+  // For some reason this is not picking up the events I thought it should 
+  // be. This is where I left off.
+  let predicate = eventStore.predicateForEvents(
+    withStart: startDateTime,
+    end: endDateTime,
+    calendars: calendars
+  )
+  let events = eventStore.events(matching: predicate)
+  let possibleWindows = getTimeBlockEvents(startDate: startDate, endDate: endDate, startTime: startTime, endTime: endTime)
+  let filteredEvents = events.filter { event in
+    !excludeCalendarNames.contains(event.calendar.title)
+  }.filter { event in
+    !excludeAllDayEvents || !event.isAllDay
+  }
+  let mergedEvents = mergeOverlappingEvents(filteredEvents)
+  let availability = mergedEvents.reduce(possibleWindows) { remainingWindows, event in
+    return remainingWindows.flatMap { $0.subtract(event) }
+  }
+  // Set the name of each event to "free"
+  availability.forEach { event in
+    event.title = "free"
+  }
+  // Print the events as JSON
+  if let jsonString = encodeToJSONString(events: availability) {
+    print(jsonString)
+  }
+}
+
 @main
 struct icaltoday: ParsableCommand {
   static var configuration = CommandConfiguration(
@@ -465,6 +542,10 @@ struct icaltoday: ParsableCommand {
       @Option(name: [.short, .customLong("include")])
       var includeCalendarNames: [String] = []
 
+      // Boolean option to exclude all-day events
+      @Flag(name: [.customLong("exclude-all-day")])
+      var excludeAllDayEvents: Bool = false
+
       static var configuration = CommandConfiguration(
         abstract: "List subcommand"
       )
@@ -477,13 +558,29 @@ struct icaltoday: ParsableCommand {
           )
           Foundation.exit(1)
         }
+        // Ensure start date is before end date
+        if startDate > endDate {
+          print("Start date must be before end date.")
+          Foundation.exit(1)
+        }
+        // Ensure start time is before end time
+        if startTime.hour > endTime.hour ||
+          (startTime.hour == endTime.hour && startTime.minute >= endTime.minute)
+        {
+          print("Start time must be before end time.")
+          Foundation.exit(1)
+        }
+
         // For now, just log the arguments
-        print("Start date: \(startDate)")
-        print("End date: \(endDate)")
-        print("Start time: \(startTime.toString())")
-        print("End time: \(endTime.toString())")
-        print("Exclude calendars: \(excludeCalendarNames)")
-        print("Include calendars: \(includeCalendarNames)")
+        listAvailability(
+          startDate: startDate,
+          endDate: endDate,
+          startTime: startTime,
+          endTime: endTime,
+          excludeCalendarNames: excludeCalendarNames,
+          includeCalendarNames: includeCalendarNames,
+          excludeAllDayEvents: excludeAllDayEvents
+        )
       }
     }
   }

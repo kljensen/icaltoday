@@ -66,6 +66,38 @@ Get a list of events between two dates for two calendars:
 On a mac, run `make` to build a debugging version. Run `make release` to build
 a release version.
 
+## Listing free times
+
+You can list free time like the following:
+
+```
+> icaltoday availability list 2024-05-31 2024-05-31 12:00 16:00 --exclude-all-day -e Kathryn
+[
+  {
+    "attendeeEmails" : [
+
+    ],
+    "endDate" : "2024-05-31T14:00:00-04:00",
+    "isToday" : true,
+    "name" : "free",
+    "startDate" : "2024-05-31T01:00:00-04:00",
+    "uid" : "AFE1F495-D0A1-4130-8B39-E01C5088B782",
+    "uidAsBase64" : "QUZFMUY0OTUtRDBBMS00MTMwLThCMzktRTAxQzUwODhCNzgy"
+  },
+  {
+    "attendeeEmails" : [
+
+    ],
+    "endDate" : "2024-05-31T16:00:00-04:00",
+    "isToday" : true,
+    "name" : "free",
+    "startDate" : "2024-05-31T14:45:00-04:00",
+    "uid" : "F61EAC5F-C4C9-4312-9BF7-6CC39041C8FB",
+    "uidAsBase64" : "RjYxRUFDNUYtQzRDOS00MzEyLTlCRjctNkNDMzkwNDFDOEZC"
+  }
+]
+```
+
 ## Contributing
 
 Please send a pull request!
@@ -96,4 +128,5 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to <http://unlicense.org/>
+
 

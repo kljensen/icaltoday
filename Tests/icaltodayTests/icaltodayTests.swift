@@ -125,6 +125,7 @@ final class icaltodayTests: XCTestCase {
         let event4 = makeEvent(start: 25, end: 35)
         let event5 = makeEvent(start: 10, end: 50)
         let event6 = makeEvent(start: 10, end: 40)
+        let event7 = makeEvent(start: 10, end: 10)
         
         // Test case 1: Same events
         XCTAssertEqual(event1.subtract(event1), [])
@@ -160,6 +161,9 @@ final class icaltodayTests: XCTestCase {
 
         let subtractedEvents8 = event5.subtract(event6)
         XCTAssertEqual(subtractedEvents8.count, 1)
+
+        let subtractedEvents9 = event1.subtract(event7)
+        XCTAssertEqual(subtractedEvents9.count, 1)
     }
 
     func testSubtractListOfEvents() {
@@ -207,7 +211,7 @@ final class icaltodayTests: XCTestCase {
 
         let avail6 = possiblePeriod.subtract([busy0to50, busy50to100])
         XCTAssertEqual(avail6.count, 0)
-        
+
 
     }
 
