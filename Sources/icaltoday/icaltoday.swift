@@ -251,10 +251,79 @@ func printEventsAsJSON(
   }
 }
 
+
+// struct RegexPatterns {
+//     static let naturalDatePattern = try! NSRegularExpression(pattern: "^(today|tomorrow|yesterday)([+-]\\d+)?$", options: [])
+// }
+
+enum Sign {
+  case positive
+  case negative
+}
+
+enum ValidDay {
+  case today
+  case tomorrow
+  case yesterday
+}
+
+extension NaturalDateSuffix: Equatable {
+    static func == (lhs: NaturalDateSuffix, rhs: NaturalDateSuffix) -> Bool {
+        return lhs.sign == rhs.sign && lhs.value == rhs.value
+    }
+}
+
+// Ensure Sign conforms to Equatable as well
+extension Sign: Equatable {}
+
+struct NaturalDateSuffix {
+  var sign: Sign
+  var value: Int
+
+  init(sign: Sign, value: Int) {
+    self.sign = sign
+    self.value = value
+  }
+
+  init?(fromString string: String) {
+    let sign: Sign
+    let value: Int
+    if string.hasPrefix("+") {
+      sign = .positive
+    } else if string.hasPrefix("-") {
+      sign = .negative
+    } else {
+      return nil
+    }
+    if let intValue = Int(string.dropFirst()) {
+      value = intValue
+    } else {
+      return nil
+    }
+    self.sign = sign
+    self.value = value
+  }
+}
+
+struct NaturalDate {
+  var validDay: ValidDay
+  var suffix: NaturalDateSuffix?
+}
+
+// Implement the ExpressibleByArgument protocol for NaturalDate
+
+
+
+// A function that parses natural language dates and returns a `Date` object.
+// This takes strings that start with either "today", "tomorrow", or "yesterday"
+// and potentially include a suffix like "+10" or "-4". Returns a Result type.
+
+
 /// Parses a string representation of a date and returns a `Date` object.
 /// - Parameter dateString: The string representation of the date.
 /// - Returns: A `Date` object if the string can be parsed successfully, otherwise `nil`.
 func parseDate(_ dateString: String) -> Date? {
+
   let dateFormatter = DateFormatter()
   dateFormatter.dateFormat = "yyyy-MM-dd"
   dateFormatter.timeZone = TimeZone.current

@@ -215,6 +215,24 @@ final class icaltodayTests: XCTestCase {
 
     }
 
+    func testNaturalDateSuffix(){
+        let cases = [
+            ("-3", NaturalDateSuffix(sign: .negative, value: 3)),
+            ("+3", NaturalDateSuffix(sign: .positive, value: 3)),
+            ("+300", NaturalDateSuffix(sign: .positive, value: 300)),
+            ("-15", NaturalDateSuffix(sign: .negative, value: 15)),
+            ("d", nil),
+            ("3", nil),
+            ("3sdfs99", nil),
+            ("823-", nil),
+            ("823+", nil),
+        ]
+
+        for (input, expected) in cases {
+            XCTAssertEqual(NaturalDateSuffix(fromString: input), expected)
+        }
+    }
+
 }
 
 func testTimeOfDayToString() {
