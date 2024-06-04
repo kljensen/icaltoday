@@ -252,62 +252,57 @@ func printEventsAsJSON(
 }
 
 
-// struct RegexPatterns {
-//     static let naturalDatePattern = try! NSRegularExpression(pattern: "^(today|tomorrow|yesterday)([+-]\\d+)?$", options: [])
-// }
-
-enum Sign {
-  case positive
-  case negative
-}
-
 enum ValidDay {
   case today
   case tomorrow
   case yesterday
 }
 
-extension NaturalDateSuffix: Equatable {
-    static func == (lhs: NaturalDateSuffix, rhs: NaturalDateSuffix) -> Bool {
-        return lhs.sign == rhs.sign && lhs.value == rhs.value
-    }
-}
+struct NaturalDate {
+  var day: ValidDay
+  var delta: Int?
 
-// Ensure Sign conforms to Equatable as well
-extension Sign: Equatable {}
-
-struct NaturalDateSuffix {
-  var sign: Sign
-  var value: Int
-
-  init(sign: Sign, value: Int) {
-    self.sign = sign
-    self.value = value
+  init(day: ValidDay, delta: Int?) {
+    self.day = day
+    self.delta = delta
+  }
+  init(day: ValidDay){
+    self.day = day
+    self.delta = nil
   }
 
   init?(fromString string: String) {
-    let sign: Sign
-    let value: Int
-    if string.hasPrefix("+") {
-      sign = .positive
-    } else if string.hasPrefix("-") {
-      sign = .negative
+    let lowerString = string.lowercased()
+    var suffix: String = ""
+    if lowerString.hasPrefix("today") {
+      day = .today
+      suffix = String(lowerString.dropFirst("today".count))
+    } else if lowerString.hasPrefix("tomorrow") {
+      day = .tomorrow
+      suffix = String(lowerString.dropFirst("tomorrow".count))
+    } else if lowerString.hasPrefix("yesterday") {
+      day = .yesterday
+      suffix = String(lowerString.dropFirst("yesterday".count))
     } else {
       return nil
     }
-    if let intValue = Int(string.dropFirst()) {
-      value = intValue
-    } else {
+    // No suffix provided
+    guard !suffix.isEmpty else {
+      return
+    }
+    // Test that suffix starts with either a "-" or a "+"
+    guard let firstChar = suffix.first, firstChar == "-" || firstChar == "+" else {
       return nil
     }
-    self.sign = sign
-    self.value = value
+    delta = Int(suffix)
   }
 }
 
-struct NaturalDate {
-  var validDay: ValidDay
-  var suffix: NaturalDateSuffix?
+// Equitable
+extension NaturalDate: Equatable {
+  static func == (lhs: NaturalDate, rhs: NaturalDate) -> Bool {
+    return lhs.day == rhs.day && lhs.delta == rhs.delta
+  }
 }
 
 // Implement the ExpressibleByArgument protocol for NaturalDate
