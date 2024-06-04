@@ -296,6 +296,23 @@ struct NaturalDate {
     }
     delta = Int(suffix)
   }
+
+  func toDate() -> Date {
+    let calendar = Calendar.current
+    var dateComponents = DateComponents()
+    switch day {
+    case .today:
+      dateComponents = calendar.dateComponents([.year, .month, .day], from: Date())
+    case .tomorrow:
+      dateComponents = calendar.dateComponents([.year, .month, .day], from: calendar.date(byAdding: .day, value: 1, to: Date())!)
+    case .yesterday:
+      dateComponents = calendar.dateComponents([.year, .month, .day], from: calendar.date(byAdding: .day, value: -1, to: Date())!)
+    }
+    if let delta = delta {
+      dateComponents.day! += delta
+    }
+    return calendar.date(from: dateComponents)!
+  }
 }
 
 // Equitable
@@ -306,8 +323,11 @@ extension NaturalDate: Equatable {
 }
 
 // Implement the ExpressibleByArgument protocol for NaturalDate
-
-
+extension NaturalDate: ExpressibleByArgument {
+  init?(argument: String) {
+    self.init(fromString: argument)
+  }
+}
 
 // A function that parses natural language dates and returns a `Date` object.
 // This takes strings that start with either "today", "tomorrow", or "yesterday"
@@ -344,7 +364,11 @@ extension Date: ExpressibleByArgument {
     if let date = parseDate(argument) {
       self = date
     } else {
-      return nil
+      // Above but with guard
+      guard let naturalDate = NaturalDate(fromString: argument) else {
+        return nil
+      }
+      self = naturalDate.toDate()
     }
   }
 }

@@ -218,10 +218,25 @@ final class icaltodayTests: XCTestCase {
     func testNaturalDate(){
         let cases = [
             ("today", NaturalDate(day: .today)),
+            ("tomorrow", NaturalDate(day: .tomorrow)),
+            ("yesterday", NaturalDate(day: .yesterday)),
+            ("", nil),
+            ("-23d", nil),
+            ("yester-+3", nil),
         ]
-
         for (input, expected) in cases {
             XCTAssertEqual(NaturalDate(fromString: input), expected)
+        }
+        let cases2 = [
+            ("today", NaturalDate(day: .today)),
+            ("tomorrow", NaturalDate(day: .tomorrow)),
+            ("yesterday", NaturalDate(day: .yesterday)),
+            ("yesterday+1", NaturalDate(day: .today)),
+            ("yesterday+2", NaturalDate(day: .tomorrow)),
+            ("tomorrow-2", NaturalDate(day: .yesterday)),
+        ]
+        for (input, expected) in cases2 {
+            XCTAssertEqual(NaturalDate(fromString: input)?.toDate(), expected.toDate())
         }
     }
 
