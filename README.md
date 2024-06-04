@@ -11,13 +11,13 @@ three commands. Maybe I'll add more later.
 
 Authorize the app to access your calendars:
 
-```
+```sh
 > icaltoday authorize
 ```
 
 Get a list of your calendars:
 
-```
+```sh
 > icaltoday calendars list
 [
   "US Holidays",
@@ -33,7 +33,8 @@ Get a list of your calendars:
 ```
 
 Get a list of events between two dates for two calendars:
-```
+
+```sh
 > icaltoday events list 2022-10-18 2022-10-20 -c MOJ -c Kate
 [
   {
@@ -61,16 +62,11 @@ Get a list of events between two dates for two calendars:
 ]
 ```
 
-## Building
-
-On a mac, run `make` to build a debugging version. Run `make release` to build
-a release version.
-
 ## Listing free times
 
 You can list free time like the following:
 
-```
+```sh
 > icaltoday availability list 2024-05-31 2024-05-31 12:00 16:00 --exclude-all-day -e Kathryn
 [
   {
@@ -97,6 +93,21 @@ You can list free time like the following:
   }
 ]
 ```
+
+Or, similarly with "natural dates":
+
+```sh
+./.build/debug/icaltoday availability list today today+1 12:00 17:00 --exclude-all-day -e Kathryn 
+```
+
+## Testing
+
+Run `make test`.
+
+## Building
+
+On a mac, run `make` to build a debugging version. Run `make release` to build
+a release version.
 
 ## Contributing
 
@@ -128,5 +139,3 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to <http://unlicense.org/>
-
-
