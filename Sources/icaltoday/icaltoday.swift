@@ -557,25 +557,43 @@ struct icaltoday: ParsableCommand {
       var startDate: Date
       @Argument
       var endDate: Date
-      @Option(name: [.short, .customLong("calendar")])
-      var calendarNames: [String] = []
+      // Option for calendars to *exclude* from the list
+      @Option(name: [.short, .customLong("exclude")])
+      var excludeCalendarNames: [String] = []
+      // Option for calendars to *include* in the list
+      @Option(name: [.short, .customLong("include")])
+      var includeCalendarNames: [String] = []
+      // Boolean option to exclude all-day events
+      @Flag(name: [.customLong("exclude-all-day")])
+      var excludeAllDayEvents: Bool = false
 
       static var configuration = CommandConfiguration(
-        abstract: "List subcommand"
+      abstract: "List subcommand"
       )
       mutating func run() throws {
-        let status = EKEventStore.authorizationStatus(for: .event)
-        if !hasAccessToCalendar(status) {
-          print(
-            "Access to the calendar is denied or restricted. Please grant access through System Preferences and try again."
-          )
-          Foundation.exit(1)
-        }
-        let eventStore = EKEventStore()
-        let calendars = getMatchingCalendars(eventStore: eventStore, calendarNames: calendarNames)
-        printEventsAsJSON(
-          withEventStore: eventStore, withCalendars: calendars, withStart: startDate,
-          withEnd: endDate)
+      let status = EKEventStore.authorizationStatus(for: .event)
+      if !hasAccessToCalendar(status) {
+        print(
+        "Access to the calendar is denied or restricted. Please grant access through System Preferences and try again."
+        )
+        Foundation.exit(1)
+      }
+      let eventStore = EKEventStore()
+      let calendars = getMatchingCalendars(eventStore: eventStore, calendarNames: includeCalendarNames)
+      let predicate = eventStore.predicateForEvents(
+        withStart: startDate, end: endDate, calendars: calendars
+      )
+      let events = eventStore.events(matching: predicate)
+      let filteredEvents = events.filter { event in
+        !excludeCalendarNames.contains(event.calendar.title)
+      }.filter { event in
+        !excludeAllDayEvents || !event.isAllDay
+      }
+      let sortedEvents = sortEventsByStartDate(filteredEvents)
+      let jsonString = encodeToJSONString(events: sortedEvents)
+      if let jsonString = jsonString {
+        print(jsonString)
+      }
       }
     }
   }
