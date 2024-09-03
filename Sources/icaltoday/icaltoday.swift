@@ -85,7 +85,7 @@ extension EKEvent {
     case .within:
       return []
     case .encompasses:
-      // The first encompases the second. 
+      // The first encompasses the second. 
       var events = [EKEvent]();
       if (self.startDate != event.startDate) {
         let newEvent1 = EKEvent(eventStore: EKEventStore())
