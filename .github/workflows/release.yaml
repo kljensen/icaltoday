@@ -5,76 +5,31 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+' # Matches semantic versioning tags like v1.0.0
 
+env:
+  DEVELOPER_DIR: /Applications/Xcode_15.4.app/Contents/Developer
+
 jobs:
-  create-release:
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    steps:
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-  build:
-    needs: create-release
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        arch: ['x86_64', 'arm64']
+  build-and-release:
+    runs-on: macos-14
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Swift
-        uses: swift-actions/setup-swift@v1
-        with:
-          swift-version: "5.7"
 
-      - name: Build for macOS
+      - name: Set up Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Build Release
+        run: make release
+
+      - name: Package Binary
         run: |
-          swift build -c release --arch ${{ matrix.arch }}
-          cd .build/${{ matrix.arch }}-apple-macosx/release
-          zip -r icaltoday-macos-${{ matrix.arch }}.zip icaltoday
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: .build/${{ matrix.arch }}-apple-macosx/release/icaltoday-macos-${{ matrix.arch }}.zip
-          asset_name: icaltoday-macos-${{ matrix.arch }}.zip
-          asset_content_type: application/zip
-
-  create-universal-binary:
-    needs: [create-release, build]
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Swift
-        uses: swift-actions/setup-swift@v1
-        with:
-          swift-version: "5.7"
-
-      - name: Build Universal Binary
-        run: |
-          swift build -c release --arch x86_64 --arch arm64
           cd .build/apple/Products/Release
           zip -r icaltoday-macos-universal.zip icaltoday
 
-      - name: Upload Universal Binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: .build/apple/Products/Release/icaltoday-macos-universal.zip
-          asset_name: icaltoday-macos-universal.zip
-          asset_content_type: application/zip
+          files: .build/apple/Products/Release/icaltoday-macos-universal.zip
+          draft: false
+          prerelease: false
